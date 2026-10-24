@@ -17,6 +17,12 @@ module.exports = {
         card: "24px",
         control: "16px",
       },
+      fontFamily: {
+        body: ["Nunito_400Regular"],
+        "body-semibold": ["Nunito_600SemiBold"],
+        "body-bold": ["Nunito_700Bold"],
+        heading: ["Nunito_800ExtraBold"],
+      },
     },
   },
   plugins: [],
