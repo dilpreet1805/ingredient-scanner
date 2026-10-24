@@ -1,0 +1,47 @@
+/** Calories and macros. Reused by scans, meals and daily goals. */
+export type Nutrition = {
+  calories: number; // kcal
+  carbsG: number;
+  proteinG: number;
+  fatG: number;
+};
+
+export type RiskLevel = "low" | "moderate" | "high";
+
+/** One additive found on a label, e.g. E621. */
+export type Additive = {
+  code: string;
+  name: string;
+  purpose: string;
+  sideEffects: string[]; // empty array if none known
+  riskLevel: RiskLevel;
+};
+
+export type ScanResult = {
+  id: string;
+  createdAt: string; // ISO date string
+  imageUri: string;
+  productName: string | null;
+  ingredients: string[];
+  benefits: string[];
+  concerns: string[];
+  additives: Additive[];
+  overallRisk: RiskLevel;
+};
+
+export type MealType = "breakfast" | "lunch" | "dinner" | "snack";
+
+export type Meal = {
+  id: string;
+  date: string; // "YYYY-MM-DD"
+  type: MealType;
+  name: string;
+  nutrition: Nutrition;
+  source: "manual" | "photo";
+};
+
+export type FoodEstimate = {
+  name: string;
+  nutrition: Nutrition;
+  confidence: "low" | "medium" | "high";
+};
