@@ -33,6 +33,12 @@
           "imageWidth": 76
         }
       ],
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "Allow Ingredient Scanner to use your camera to photograph product labels."
+        }
+      ],
       "expo-font",
       "expo-image",
       "expo-status-bar",
