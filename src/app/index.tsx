@@ -1,42 +1,43 @@
-import { ScrollView, Text, View } from "react-native";
+import { useState } from "react";
+import { Alert, ScrollView, View } from "react-native";
+
+import { AppText } from "@/components/ui/app-text";
+import { Button } from "@/components/ui/button";
 
 export default function Home() {
+  const [loading, setLoading] = useState(false);
+
+  const fakeScan = () => {
+    setLoading(true);
+    setTimeout(() => setLoading(false), 2000);
+  };
+
   return (
     <ScrollView
       className="flex-1 bg-canvas"
       contentContainerClassName="gap-4 p-6 pt-20"
     >
-      <Text className="font-heading text-3xl text-ink">Palette check</Text>
-      <Text className="font-body text-base text-muted">
-        If these look right, our tokens work.
-      </Text>
+      <AppText variant="heading">Components</AppText>
+      <AppText variant="caption">Tap the buttons to test them.</AppText>
 
-      <View className="rounded-card bg-surface p-5">
-        <Text className="text-lg font-body-bold text-ink">A card</Text>
-        <Text className="text-muted">
-          White surface on the canvas background.
-        </Text>
-      </View>
-
-      <View className="flex-row gap-3">
-        <View className="flex-1 items-center rounded-control bg-primary py-4">
-          <Text className="font-body-bold text-white">Primary</Text>
-        </View>
-        <View className="flex-1 items-center rounded-control bg-accent py-4">
-          <Text className="font-body-bold text-ink">Accent</Text>
-        </View>
-      </View>
-
-      <View className="flex-row gap-3">
-        <View className="flex-1 items-center rounded-control bg-risk-low py-3">
-          <Text className="font-body-semibold text-white">Low</Text>
-        </View>
-        <View className="flex-1 items-center rounded-control bg-risk-mid py-3">
-          <Text className="font-body-semibold text-ink">Moderate</Text>
-        </View>
-        <View className="flex-1 items-center rounded-control bg-risk-high py-3">
-          <Text className="font-body-semibold text-white">High</Text>
-        </View>
+      <View className="gap-3 rounded-card bg-surface p-5">
+        <AppText variant="title">Buttons</AppText>
+        <Button
+          title="Primary"
+          onPress={() => Alert.alert("Primary pressed")}
+        />
+        <Button
+          title="Scan ingredients"
+          variant="accent"
+          loading={loading}
+          onPress={fakeScan}
+        />
+        <Button
+          title="Soft"
+          variant="soft"
+          onPress={() => Alert.alert("Soft pressed")}
+        />
+        <Button title="Disabled" disabled />
       </View>
     </ScrollView>
   );
