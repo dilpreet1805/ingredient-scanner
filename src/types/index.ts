@@ -45,3 +45,13 @@ export type FoodEstimate = {
   nutrition: Nutrition;
   confidence: "low" | "medium" | "high";
 };
+
+export type DailyGoals = Nutrition;
+
+export type UserProfile = {
+  name: string;
+  email: string;
+  heightCm: number;
+  weightKg: number;
+  avatarUri: string | null;
+};
