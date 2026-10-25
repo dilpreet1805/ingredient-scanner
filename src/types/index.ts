@@ -17,16 +17,32 @@ export type Additive = {
   riskLevel: RiskLevel;
 };
 
+export type ProductCategory =
+  | "noodles"
+  | "bread"
+  | "beverage"
+  | "snack"
+  | "sweets"
+  | "dairy"
+  | "cereal"
+  | "sauce"
+  | "frozen"
+  | "fruit_veg"
+  | "meat_fish"
+  | "other";
+
 export type ScanResult = {
   id: string;
   createdAt: string; // ISO date string
-  imageUri: string;
+  imageUri: string | null;
   productName: string | null;
+  category: ProductCategory;
   ingredients: string[];
   benefits: string[];
   concerns: string[];
   additives: Additive[];
   overallRisk: RiskLevel;
+  pinned: boolean;
 };
 
 export type MealType = "breakfast" | "lunch" | "dinner" | "snack";

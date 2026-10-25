@@ -4,14 +4,14 @@ import { AppText } from "@/components/ui/app-text";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Screen } from "@/components/ui/screen";
-import { usePhotoCapture } from "@/features/scan/use-photo-capture";
+import { usePhotoCapture } from "@/features/decode/use-photo-capture";
 
 export default function Scan() {
   const { photoUri, cameraBlocked, takePhoto, pickPhoto } = usePhotoCapture();
 
   return (
     <Screen>
-      <AppText variant="heading">Scan</AppText>
+      <AppText variant="heading">Decode</AppText>
 
       <Card className="gap-4">
         {photoUri ? (
