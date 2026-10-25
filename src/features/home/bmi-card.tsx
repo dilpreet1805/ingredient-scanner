@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { View } from "react-native";
+import { Image, View } from "react-native";
 
 import { AppText } from "@/components/ui/app-text";
 import { Card } from "@/components/ui/card";
@@ -23,7 +23,9 @@ const notes: Record<BmiCategory, string> = {
   obese: "Well above the typical range.",
 };
 
-type Props = { profile: Pick<UserProfile, "heightCm" | "weightKg"> };
+type Props = {
+  profile: Pick<UserProfile, "heightCm" | "weightKg" | "avatarUri" | "name">;
+};
 
 export function BmiCard({ profile }: Props) {
   const bmi = calculateBmi(profile.weightKg, profile.heightCm);
@@ -46,9 +48,26 @@ export function BmiCard({ profile }: Props) {
     <Card className="gap-4">
       <View className="flex-row items-center justify-between">
         <View className="flex-row items-center gap-3">
-          <View className="h-10 w-10 items-center justify-center rounded-full bg-primary-soft">
-            <Ionicons name="person-outline" size={20} color={colors.primary} />
-          </View>
+          {profile.avatarUri ? (
+            <Image
+              source={{ uri: profile.avatarUri }}
+              accessibilityLabel={`${profile.name}'s photo`}
+              style={{
+                width: 40,
+                height: 40,
+                borderRadius: 20,
+                backgroundColor: colors.primarySoft,
+              }}
+            />
+          ) : (
+            <View className="h-10 w-10 items-center justify-center rounded-full bg-primary-soft">
+              <Ionicons
+                name="person-outline"
+                size={20}
+                color={colors.primary}
+              />
+            </View>
+          )}
           <View>
             <AppText variant="caption">Your BMI</AppText>
             <AppText variant="heading" className="text-4xl">
