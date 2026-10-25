@@ -8,10 +8,11 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Screen } from "@/components/ui/screen";
 import { colors } from "@/constants/colors";
+import { useCaptureDraft } from "@/features/decode/capture-draft";
 import { ScanListItem } from "@/features/decode/scan-list-item";
 import { TipsSheet } from "@/features/decode/tips-sheet";
 import { usePhotoCapture } from "@/features/decode/use-photo-capture";
-import { recentScans } from "@/features/home/fixtures"; // TEMPORARY: real storage in Step 3
+import { useScans } from "@/features/decode/use-scans";
 
 export default function Decode() {
   const { cameraBlocked, takePhoto, pickPhoto } = usePhotoCapture();
@@ -19,14 +20,13 @@ export default function Decode() {
 
   const start = async (source: "camera" | "gallery") => {
     const uri = source === "camera" ? await takePhoto() : await pickPhoto();
-    if (uri)
-      router.push({
-        pathname: "/decode/capture",
-        params: { ingredientsUri: uri },
-      });
+    if (uri) {
+      useCaptureDraft.getState().begin(uri);
+      router.push("/decode/capture");
+    }
   };
-
-  const visible = recentScans.slice(0, 3);
+  const { data: scans = [] } = useScans();
+  const visible = scans.slice(0, 3);
 
   return (
     <Screen>
@@ -106,7 +106,7 @@ export default function Decode() {
       <Card className="gap-1">
         <View className="mb-1 flex-row items-center justify-between">
           <AppText variant="title">Recent scans</AppText>
-          {recentScans.length > 0 && (
+          {scans.length > 0 && (
             <Pressable
               accessibilityRole="button"
               onPress={() => router.push("/decode/all")}

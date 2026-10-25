@@ -48,6 +48,19 @@ export type ScanResult = {
   nutritionImageUri: string | null;
 };
 
+export type ScanAnalysis = Pick<
+  ScanResult,
+  | "productName"
+  | "category"
+  | "summary"
+  | "overallRisk"
+  | "ingredients"
+  | "benefits"
+  | "concerns"
+  | "additives"
+  | "nutritionPer100g"
+>;
+
 export type MealType = "breakfast" | "lunch" | "dinner" | "snack";
 
 export type Meal = {

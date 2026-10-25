@@ -1,5 +1,6 @@
+import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
-import { Image, View } from "react-native";
+import { Image, Pressable, View } from "react-native";
 
 import { ProductThumbnail } from "@/components/product-thumbnail";
 import { AppText } from "@/components/ui/app-text";
@@ -10,34 +11,52 @@ import { Card } from "@/components/ui/card";
 import { Screen } from "@/components/ui/screen";
 import { colors } from "@/constants/colors";
 import { ScanDetails } from "@/features/decode/scan-details";
-import { recentScans } from "@/features/home/fixtures"; // TEMPORARY: real storage in Step 3
+import { useScan, useSetPinned } from "@/features/decode/use-scans";
 import type { RiskLevel } from "@/types";
 
 // Placeholder wording. Final copy needs care, because this is health-related.
-const verdict: Record<RiskLevel, { title: string; text: string }> = {
-  low: {
-    title: "Looks like a good pick",
-    text: "Nothing here stands out as a concern for regular eating.",
-  },
-  moderate: {
-    title: "Fine in moderation",
-    text: "A few ingredients are worth keeping an eye on.",
-  },
-  high: {
-    title: "Best as an occasional treat",
-    text: "Several ingredients are worth limiting if you eat this often.",
-  },
+const verdictTitle: Record<RiskLevel, string> = {
+  low: "Looks like a good pick",
+  moderate: "Fine in moderation",
+  high: "Best as an occasional treat",
 };
 
 export default function ScanResultScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const scan = recentScans.find((s) => s.id === id);
+  const { data: scan, isPending } = useScan(id);
+  const setPinned = useSetPinned();
 
   return (
     <Screen>
-      <BackButton />
+      <View className="flex-row items-center justify-between">
+        <BackButton />
+        {scan && (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityState={{ selected: scan.pinned }}
+            accessibilityLabel={
+              scan.pinned ? "Unpin this scan" : "Pin this scan"
+            }
+            onPress={() =>
+              setPinned.mutate({ id: scan.id, pinned: !scan.pinned })
+            }
+            className="h-11 flex-row items-center gap-2 rounded-full bg-surface px-4 active:opacity-70"
+          >
+            <Ionicons
+              name={scan.pinned ? "pin" : "pin-outline"}
+              size={18}
+              color={colors.forest}
+            />
+            <AppText variant="caption" className="font-body-bold text-forest">
+              {scan.pinned ? "Pinned" : "Pin"}
+            </AppText>
+          </Pressable>
+        )}
+      </View>
 
-      {!scan ? (
+      {isPending ? (
+        <AppText variant="caption">Loading…</AppText>
+      ) : !scan ? (
         <Card className="gap-3">
           <AppText variant="title">We couldn't find that scan</AppText>
           <AppText variant="caption">
@@ -71,7 +90,7 @@ export default function ScanResultScreen() {
             <View className="gap-2 rounded-control bg-canvas p-4">
               <Badge level={scan.overallRisk} />
               <AppText variant="title">
-                {verdict[scan.overallRisk].title}
+                {verdictTitle[scan.overallRisk]}
               </AppText>
               <AppText variant="caption">{scan.summary}</AppText>
             </View>
@@ -128,7 +147,7 @@ export default function ScanResultScreen() {
                 accessibilityLabel="Your label photo"
                 style={{
                   width: "100%",
-                  height: 180,
+                  height: 200,
                   borderRadius: 16,
                   backgroundColor: colors.primarySoft,
                 }}

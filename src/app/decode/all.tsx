@@ -3,9 +3,10 @@ import { BackButton } from "@/components/ui/back-button";
 import { Card } from "@/components/ui/card";
 import { Screen } from "@/components/ui/screen";
 import { ScanListItem } from "@/features/decode/scan-list-item";
-import { recentScans } from "@/features/home/fixtures"; // TEMPORARY
+import { useScans } from "@/features/decode/use-scans";
 
 export default function AllScans() {
+  const { data: scans = [] } = useScans();
   return (
     <Screen>
       <BackButton />
@@ -15,16 +16,16 @@ export default function AllScans() {
       </AppText>
 
       <Card>
-        {recentScans.length === 0 ? (
+        {scans.length === 0 ? (
           <AppText variant="caption">
             Products you decode will show up here.
           </AppText>
         ) : (
-          recentScans.map((scan, index) => (
+          scans.map((scan, index) => (
             <ScanListItem
               key={scan.id}
               scan={scan}
-              isLast={index === recentScans.length - 1}
+              isLast={index === scans.length - 1}
             />
           ))
         )}

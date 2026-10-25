@@ -44,7 +44,12 @@ export function ScanListItem({
           >
             {scan.productName ?? "Unnamed product"}
           </AppText>
-          <AppText variant="caption">{formatDate(scan.createdAt)}</AppText>
+          <View className="flex-row items-center gap-1">
+            {scan.pinned && (
+              <Ionicons name="pin" size={12} color={colors.muted} />
+            )}
+            <AppText variant="caption">{formatDate(scan.createdAt)}</AppText>
+          </View>
         </View>
         <Badge level={scan.overallRisk} />
         <Ionicons name="chevron-forward" size={20} color={colors.muted} />

@@ -3,13 +3,9 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Screen } from "@/components/ui/screen";
 import { colors } from "@/constants/colors";
+import { useScans } from "@/features/decode/use-scans";
 import { BmiCard } from "@/features/home/bmi-card";
-import {
-  eatenToday,
-  goals,
-  profile,
-  recentScans,
-} from "@/features/home/fixtures";
+import { eatenToday, goals, profile } from "@/features/home/fixtures";
 import { NutritionCard } from "@/features/home/nutrition-card";
 import { RecentScans } from "@/features/home/recent-scans";
 import { Ionicons } from "@expo/vector-icons";
@@ -23,6 +19,7 @@ function greeting() {
 }
 
 export default function Home() {
+  const { data: scans = [] } = useScans();
   return (
     <Screen>
       <View className="flex-row items-center justify-between">
@@ -69,7 +66,7 @@ export default function Home() {
         />
       </Card>
 
-      <RecentScans scans={recentScans.slice(0, 3)} />
+      <RecentScans scans={scans.slice(0, 3)} />
     </Screen>
   );
 }
