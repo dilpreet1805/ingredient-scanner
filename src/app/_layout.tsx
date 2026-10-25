@@ -4,20 +4,21 @@ import {
   Nunito_700Bold,
   Nunito_800ExtraBold,
 } from "@expo-google-fonts/nunito";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useFonts } from "expo-font";
-import { DarkTheme, DefaultTheme, ThemeProvider } from "expo-router";
+import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { useColorScheme } from "react-native";
 import "../global.css";
 
 import { AnimatedSplashOverlay } from "@/components/animated-icon";
-import AppTabs from "@/components/app-tabs";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { colors } from "@/constants/colors";
 
 SplashScreen.preventAutoHideAsync();
+
 const queryClient = new QueryClient();
 
-export default function TabLayout() {
+export default function RootLayout() {
   const colorScheme = useColorScheme();
 
   const [fontsLoaded, fontError] = useFonts({
@@ -27,14 +28,22 @@ export default function TabLayout() {
     Nunito_800ExtraBold,
   });
 
-  // Wait for fonts, but don't hang forever if loading fails.
   if (!fontsLoaded && !fontError) return null;
 
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
         <AnimatedSplashOverlay />
-        <AppTabs />
+        <Stack
+          screenOptions={{
+            headerShown: false,
+            contentStyle: { backgroundColor: colors.canvas },
+          }}
+        >
+          <Stack.Screen name="(tabs)" />
+          <Stack.Screen name="onboarding" options={{ gestureEnabled: false }} />
+          <Stack.Screen name="profile" />
+        </Stack>
       </ThemeProvider>
     </QueryClientProvider>
   );

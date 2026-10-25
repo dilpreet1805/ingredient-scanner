@@ -14,6 +14,7 @@ export function Screen({ children, className }: Props) {
   return (
     <View className="flex-1 bg-canvas" style={{ paddingTop: insets.top }}>
       <ScrollView
+        keyboardShouldPersistTaps="handled"
         contentContainerClassName={cn("gap-4 px-6 pb-8 pt-4", className)}
       >
         {children}

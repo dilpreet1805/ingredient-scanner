@@ -1,3 +1,7 @@
+import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
+import { Image, View } from "react-native";
+
 import { AppText } from "@/components/ui/app-text";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -5,12 +9,13 @@ import { Screen } from "@/components/ui/screen";
 import { colors } from "@/constants/colors";
 import { useScans } from "@/features/decode/use-scans";
 import { BmiCard } from "@/features/home/bmi-card";
-import { eatenToday, goals, profile } from "@/features/home/fixtures";
+import { eatenToday } from "@/features/home/fixtures";
 import { NutritionCard } from "@/features/home/nutrition-card";
 import { RecentScans } from "@/features/home/recent-scans";
-import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
-import { Image, Pressable, View } from "react-native";
+import { AvatarMenu } from "@/features/profile/avatar-menu";
+import { ProfileGate } from "@/features/profile/profile-gate";
+import type { UserProfile } from "@/types";
+
 function greeting() {
   const hour = new Date().getHours();
   if (hour < 12) return "Good morning";
@@ -18,8 +23,9 @@ function greeting() {
   return "Good evening";
 }
 
-export default function Home() {
+function HomeContent({ profile }: { profile: UserProfile }) {
   const { data: scans = [] } = useScans();
+
   return (
     <Screen>
       <View className="flex-row items-center justify-between">
@@ -30,18 +36,10 @@ export default function Home() {
           </View>
           <AppText variant="heading">{profile.name}</AppText>
         </View>
-
-        {/* Opens the profile screen once we build it (Step 4). */}
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Profile"
-          className="h-12 w-12 items-center justify-center rounded-full bg-primary-soft active:opacity-70"
-        >
-          <Ionicons name="person" size={22} color={colors.primary} />
-        </Pressable>
+        <AvatarMenu profile={profile} />
       </View>
 
-      <NutritionCard eaten={eatenToday} goals={goals} />
+      <NutritionCard eaten={eatenToday} goals={profile.dailyGoals} />
       <BmiCard profile={profile} />
 
       <Card className="gap-3 bg-accent-soft">
@@ -68,5 +66,13 @@ export default function Home() {
 
       <RecentScans scans={scans.slice(0, 3)} />
     </Screen>
+  );
+}
+
+export default function Home() {
+  return (
+    <ProfileGate redirectIfMissing>
+      {(profile) => <HomeContent profile={profile} />}
+    </ProfileGate>
   );
 }

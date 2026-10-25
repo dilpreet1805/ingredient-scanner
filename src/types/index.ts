@@ -80,10 +80,17 @@ export type FoodEstimate = {
 
 export type DailyGoals = Nutrition;
 
+export type WeightGoal = "lose" | "maintain" | "gain";
+
 export type UserProfile = {
   name: string;
   email: string;
+  birthYear: number; // age is computed from this
   heightCm: number;
   weightKg: number;
+  goal: WeightGoal;
   avatarUri: string | null;
+  newsletterOptIn: boolean;
+  dailyGoals: DailyGoals;
+  createdAt: string; // ISO date the profile was first saved
 };
