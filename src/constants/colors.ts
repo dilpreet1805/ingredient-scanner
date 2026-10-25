@@ -2,6 +2,7 @@
 // can't take a className (icon colors, native tab bar, SVG).
 
 export const colors = {
+  forest: "#1C4B38",
   canvas: "#F6FAF3",
   surface: "#FFFFFF",
   ink: "#22332A",
@@ -10,6 +11,7 @@ export const colors = {
   primarySoft: "#E1F2E6",
   accent: "#F3A04B",
   accentSoft: "#FDEBD2",
+  accentStrong: "#D2630E",
   riskLow: "#4FA06A",
   riskMid: "#E3B02F",
   riskHigh: "#DE5A4E",

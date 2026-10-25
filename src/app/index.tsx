@@ -1,7 +1,3 @@
-import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
-import { router } from "expo-router";
-import { Pressable, View } from "react-native";
-
 import { AppText } from "@/components/ui/app-text";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -16,7 +12,9 @@ import {
 } from "@/features/home/fixtures";
 import { NutritionCard } from "@/features/home/nutrition-card";
 import { RecentScans } from "@/features/home/recent-scans";
-
+import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
+import { Image, Pressable, View } from "react-native";
 function greeting() {
   const hour = new Date().getHours();
   if (hour < 12) return "Good morning";
@@ -49,27 +47,26 @@ export default function Home() {
       <NutritionCard eaten={eatenToday} goals={goals} />
       <BmiCard profile={profile} />
 
-      <Card className="flex-row items-center gap-3 bg-accent-soft">
-        <View className="flex-1 gap-3">
-          <View className="gap-1">
+      <Card className="gap-3 bg-accent-soft">
+        <View className="flex-row items-center">
+          <View className="flex-1 gap-1 pr-2">
             <AppText variant="title">Shopping for something?</AppText>
             <AppText variant="caption">
               Decode the ingredient list to see what's inside.
             </AppText>
           </View>
-          <Button
-            title="Decode a product"
-            variant="accent"
-            onPress={() => router.push("/decode")}
+          <Image
+            source={require("@/assets/images/decode-hero.png")}
+            resizeMode="contain"
+            accessible={false}
+            style={{ width: 150, aspectRatio: 1.5 }}
           />
         </View>
-        <View className="h-24 w-24 items-center justify-center rounded-full bg-surface">
-          <MaterialCommunityIcons
-            name="text-box-search-outline"
-            size={44}
-            color={colors.accent}
-          />
-        </View>
+        <Button
+          title="Decode a product"
+          variant="accent"
+          onPress={() => router.push("/decode")}
+        />
       </Card>
 
       <RecentScans scans={recentScans.slice(0, 3)} />

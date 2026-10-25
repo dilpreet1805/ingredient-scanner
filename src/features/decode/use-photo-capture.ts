@@ -1,34 +1,30 @@
 import * as ImagePicker from "expo-image-picker";
-import { useState } from "react";
+
+const options: ImagePicker.ImagePickerOptions = {
+  mediaTypes: ["images"],
+  quality: 0.7,
+};
 
 export function usePhotoCapture() {
   const [permission, requestPermission] = ImagePicker.useCameraPermissions();
-  const [photoUri, setPhotoUri] = useState<string | null>(null);
 
-  // Denied, and the OS won't show the prompt again: the user must use Settings.
   const cameraBlocked =
     permission !== null && !permission.granted && !permission.canAskAgain;
 
-  const takePhoto = async () => {
+  /** Returns the photo's URI, or null if the user cancelled or denied permission. */
+  const takePhoto = async (): Promise<string | null> => {
     const current = permission?.granted
       ? permission
       : await requestPermission();
-    if (!current.granted) return;
-
-    const result = await ImagePicker.launchCameraAsync({
-      mediaTypes: ["images"],
-      quality: 0.7,
-    });
-    if (!result.canceled) setPhotoUri(result.assets[0].uri);
+    if (!current.granted) return null;
+    const result = await ImagePicker.launchCameraAsync(options);
+    return result.canceled ? null : result.assets[0].uri;
   };
 
-  const pickPhoto = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ["images"],
-      quality: 0.7,
-    });
-    if (!result.canceled) setPhotoUri(result.assets[0].uri);
+  const pickPhoto = async (): Promise<string | null> => {
+    const result = await ImagePicker.launchImageLibraryAsync(options);
+    return result.canceled ? null : result.assets[0].uri;
   };
 
-  return { photoUri, cameraBlocked, takePhoto, pickPhoto };
+  return { cameraBlocked, takePhoto, pickPhoto };
 }

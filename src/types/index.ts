@@ -43,6 +43,9 @@ export type ScanResult = {
   additives: Additive[];
   overallRisk: RiskLevel;
   pinned: boolean;
+  summary: string;
+  nutritionPer100g: Nutrition | null;
+  nutritionImageUri: string | null;
 };
 
 export type MealType = "breakfast" | "lunch" | "dinner" | "snack";

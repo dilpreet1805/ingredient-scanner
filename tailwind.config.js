@@ -10,7 +10,8 @@ module.exports = {
         ink: "#22332A",
         muted: "#6B7C71",
         primary: { DEFAULT: "#4FA06A", soft: "#E1F2E6" },
-        accent: { DEFAULT: "#F3A04B", soft: "#FDEBD2" },
+        forest: "#1C4B38",
+        accent: { DEFAULT: "#F3A04B", soft: "#FDEBD2", strong: "#D2630E" },
         risk: { low: "#4FA06A", mid: "#E3B02F", high: "#DE5A4E" },
       },
       borderRadius: {

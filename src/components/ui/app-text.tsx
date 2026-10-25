@@ -4,8 +4,8 @@ import { Text, type TextProps } from "react-native";
 type Variant = "heading" | "title" | "body" | "caption" | "button";
 
 const variantClasses: Record<Variant, string> = {
-  heading: "font-heading text-3xl text-ink",
-  title: "font-body-bold text-xl text-ink",
+  heading: "font-heading text-3xl text-forest",
+  title: "font-body-bold text-xl text-forest",
   body: "font-body text-base text-ink",
   caption: "font-body text-sm text-muted",
   button: "font-body-bold text-base text-ink",

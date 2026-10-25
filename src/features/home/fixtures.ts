@@ -60,6 +60,9 @@ export const recentScans: ScanResult[] = [
     ],
     overallRisk: "high",
     pinned: false,
+    summary: "High in sodium, refined flour, low in fibre.",
+    nutritionPer100g: { calories: 450, carbsG: 62, proteinG: 9, fatG: 18 },
+    nutritionImageUri: null,
   },
   {
     id: "2",
@@ -76,6 +79,9 @@ export const recentScans: ScanResult[] = [
     additives: [],
     overallRisk: "low",
     pinned: false,
+    summary: "Good source of fibre, whole grains.",
+    nutritionPer100g: { calories: 250, carbsG: 43, proteinG: 10, fatG: 3 },
+    nutritionImageUri: null,
   },
   {
     id: "3",
@@ -112,5 +118,8 @@ export const recentScans: ScanResult[] = [
     ],
     overallRisk: "moderate",
     pinned: false,
+    summary: "High in sugar, low in real fruit.",
+    nutritionPer100g: null,
+    nutritionImageUri: null,
   },
 ];

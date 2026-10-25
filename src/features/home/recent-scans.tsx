@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
+import { router } from "expo-router";
 import { useState } from "react";
 import { Pressable, View } from "react-native";
 import Animated, {
@@ -11,8 +12,10 @@ import Animated, {
 import { ProductThumbnail } from "@/components/product-thumbnail";
 import { AppText } from "@/components/ui/app-text";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { colors } from "@/constants/colors";
+import { ScanDetails } from "@/features/decode/scan-details";
 import { cn } from "@/lib/cn";
 import type { ScanResult } from "@/types";
 
@@ -115,50 +118,14 @@ function ScanRow(props: {
           exiting={FadeOut}
           className="gap-4 pb-4"
         >
-          <DetailList
-            title="Benefits"
-            items={scan.benefits}
-            icon="checkmark-circle"
-            color={colors.primary}
+          <ScanDetails scan={scan} />
+          <Button
+            title="Open full report"
+            variant="soft"
+            onPress={() =>
+              router.push({ pathname: "/decode/[id]", params: { id: scan.id } })
+            }
           />
-          <DetailList
-            title="Things to watch"
-            items={scan.concerns}
-            icon="alert-circle"
-            color={colors.accent}
-          />
-
-          {scan.additives.length > 0 && (
-            <View className="gap-3">
-              <AppText variant="body" className="font-body-bold">
-                Additives
-              </AppText>
-              {scan.additives.map((a) => (
-                <View
-                  key={a.code}
-                  className="gap-1 rounded-control bg-canvas p-3"
-                >
-                  <View className="flex-row items-center justify-between gap-2">
-                    <AppText
-                      variant="body"
-                      className="flex-1 font-body-semibold"
-                    >
-                      {a.code} · {a.name}
-                    </AppText>
-                    <Badge level={a.riskLevel} />
-                  </View>
-                  <AppText variant="caption" className="text-ink">
-                    {a.purpose}
-                  </AppText>
-                  <AppText variant="caption">
-                    {a.sideEffects.length === 0
-                      ? "No known side effects at normal amounts."
-                      : a.sideEffects.join(" ")}
-                  </AppText>
-                </View>
-              ))}
-            </View>
-          )}
         </Animated.View>
       )}
     </Animated.View>
