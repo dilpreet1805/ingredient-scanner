@@ -42,7 +42,7 @@ const entry = z.object({
 });
 
 // Empty string means "not visible". 0 servings means "not printed".
-// An empty list means "this column is not printed".
+// An empty list means "the per 100 g column is not printed".
 export const modelOutputSchema = z.object({
   isFoodLabel: z.boolean(),
   brand: z.string(),
@@ -53,7 +53,6 @@ export const modelOutputSchema = z.object({
   servingSize: z.string(),
   servingsPerPack: z.number(),
   per100g: z.array(entry),
-  perServing: z.array(entry),
 });
 
 export type ModelOutput = z.infer<typeof modelOutputSchema>;
@@ -84,7 +83,6 @@ export const LABEL_JSON_SCHEMA = {
     servingSize: text,
     servingsPerPack: { type: "number" },
     per100g: { type: "array", items: entryJson },
-    perServing: { type: "array", items: entryJson },
   },
   required: Object.keys(modelOutputSchema.shape),
   additionalProperties: false,
@@ -105,22 +103,20 @@ export type LabelReading = {
   servingSize: string | null;
   servingsPerPack: number | null;
   per100g: Nutrients | null;
-  perServing: Nutrients | null;
 };
 
 function toNutrients(entries: ModelOutput["per100g"]): Nutrients | null {
-  if (entries.length === 0) return null;
-
   const result = Object.fromEntries(
     NUTRIENT_KEYS.map((key) => [key, null]),
   ) as Nutrients;
   const seen = new Set<NutrientKey>();
   for (const item of entries) {
     if (seen.has(item.nutrient)) continue; // the first entry wins
+    if (item.lessThan && item.value <= 0) continue; // "less than zero" means nothing, e.g. TRACE
     seen.add(item.nutrient);
     result[item.nutrient] = { value: item.value, lessThan: item.lessThan };
   }
-  return result;
+  return seen.size === 0 ? null : result;
 }
 
 /** Converts the wire format to the app shape. Placeholders are cleaned in checkReading. */
@@ -135,14 +131,17 @@ export function toReading(output: ModelOutput): LabelReading {
     servingSize: output.servingSize,
     servingsPerPack: output.servingsPerPack,
     per100g: toNutrients(output.per100g),
-    perServing: toNutrients(output.perServing),
   };
 }
 
 // ---------- 3. Our own checks on what Claude returned ----------
 
 export type Missing = "ingredients" | "nutrition";
-export type Warning = "energy_mismatch" | "values_out_of_range";
+export type Warning =
+  | "energy_mismatch"
+  | "values_out_of_range"
+  | "incomplete_nutrition"
+  | "sugar_inconsistent";
 
 export type CheckedReading =
   | { ok: false; reason: "not_a_label" }
@@ -164,27 +163,31 @@ const GRAM_KEYS = [
   "transFatG",
 ] as const;
 
+// Every food label must print these four.
+const CORE_KEYS = ["energyKcal", "proteinG", "carbsG", "fatG"] as const;
+
 /** Trim, turn empty text into null, and cap the length. */
 const clean = (value: string | null, max: number): string | null => {
   const trimmed = value?.trim().slice(0, max) ?? "";
   return trimmed.length > 0 ? trimmed : null;
 };
 
-function valuesPlausible(n: Nutrients, per100g: boolean): boolean {
-  const gramLimit = per100g ? 100 : 1000;
-  const kcalLimit = per100g ? 950 : 5000;
-
+function valuesPlausible(n: Nutrients): boolean {
   for (const key of NUTRIENT_KEYS) {
     const v = n[key]?.value;
     if (v !== undefined && (!Number.isFinite(v) || v < 0)) return false;
   }
-  if ((n.energyKcal?.value ?? 0) > kcalLimit) return false;
+  if ((n.energyKcal?.value ?? 0) > 950) return false;
   for (const key of GRAM_KEYS) {
-    if ((n[key]?.value ?? 0) > gramLimit) return false;
+    if ((n[key]?.value ?? 0) > 100) return false;
   }
   if ((n.sodiumMg?.value ?? 0) > 40_000) return false;
   if ((n.cholesterolMg?.value ?? 0) > 3_000) return false;
   return true;
+}
+
+function coreComplete(n: Nutrients): boolean {
+  return CORE_KEYS.every((key) => n[key] !== null);
 }
 
 /** Energy should roughly equal 4 x protein + 4 x carbs + 9 x fat. */
@@ -199,10 +202,22 @@ function energyConsistent(n: Nutrients): boolean {
     carbs === undefined ||
     fat === undefined
   ) {
-    return true; // not enough values to check
+    return true; // not enough values to check; coreComplete reports that case
   }
   const expected = 4 * protein + 4 * carbs + 9 * fat;
-  return Math.abs(energy - expected) <= Math.max(0.25 * expected, 20);
+  return Math.abs(energy - expected) <= Math.max(0.05 * expected, 10);
+}
+
+/** Added sugars cannot exceed total sugars, which cannot exceed carbohydrates. */
+function sugarsConsistent(n: Nutrients): boolean {
+  const added = n.addedSugarG?.value;
+  const total = n.totalSugarG?.value;
+  const carbs = n.carbsG?.value;
+  if (added !== undefined && total !== undefined && added > total + 0.5)
+    return false;
+  if (total !== undefined && carbs !== undefined && total > carbs + 0.5)
+    return false;
+  return true;
 }
 
 export function checkReading(input: LabelReading): CheckedReading {
@@ -213,16 +228,15 @@ export function checkReading(input: LabelReading): CheckedReading {
     if (!warnings.includes(w)) warnings.push(w);
   };
 
-  const cleanBlock = (
-    block: Nutrients | null,
-    per100g: boolean,
-  ): Nutrients | null => {
+  const cleanBlock = (block: Nutrients | null): Nutrients | null => {
     if (!block) return null;
-    if (!valuesPlausible(block, per100g)) {
+    if (!valuesPlausible(block)) {
       warn("values_out_of_range");
       return null; // never pass nonsense to the app
     }
+    if (!coreComplete(block)) warn("incomplete_nutrition");
     if (!energyConsistent(block)) warn("energy_mismatch");
+    if (!sugarsConsistent(block)) warn("sugar_inconsistent");
     return block;
   };
 
@@ -245,13 +259,12 @@ export function checkReading(input: LabelReading): CheckedReading {
       servings <= 1000
         ? servings
         : null,
-    per100g: cleanBlock(input.per100g, true),
-    perServing: cleanBlock(input.perServing, false),
+    per100g: cleanBlock(input.per100g),
   };
 
   const missing: Missing[] = [];
   if (!reading.ingredientsText) missing.push("ingredients");
-  if (!reading.per100g && !reading.perServing) missing.push("nutrition");
+  if (!reading.per100g) missing.push("nutrition");
 
   return { ok: true, reading, missing, warnings };
 }

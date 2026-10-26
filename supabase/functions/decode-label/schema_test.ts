@@ -1,13 +1,13 @@
 import { assertEquals, assertFalse } from "@std/assert";
 
 import {
-    checkReading,
-    LABEL_JSON_SCHEMA,
-    modelOutputSchema,
-    toReading,
-    type LabelReading,
-    type ModelOutput,
-    type Nutrients,
+  checkReading,
+  LABEL_JSON_SCHEMA,
+  modelOutputSchema,
+  toReading,
+  type LabelReading,
+  type ModelOutput,
+  type Nutrients,
 } from "./schema.ts";
 
 const value = (v: number, lessThan = false) => ({ value: v, lessThan });
@@ -38,6 +38,14 @@ const peanutButter100g: Nutrients = {
   sodiumMg: value(11.5),
 };
 
+// The Kissan jam: energy 285.57, protein 0.3, carbs 70.5, fat 0.1 per 100 g.
+const jam100g: Nutrients = {
+  ...empty,
+  proteinG: value(0.3),
+  carbsG: value(70.5),
+  fatG: value(0.1),
+};
+
 const base: LabelReading = {
   isFoodLabel: true,
   brand: "MyFitness",
@@ -48,7 +56,6 @@ const base: LabelReading = {
   servingSize: "32g",
   servingsPerPack: 16,
   per100g: peanutButter100g,
-  perServing: null,
 };
 
 const output: ModelOutput = {
@@ -65,7 +72,6 @@ const output: ModelOutput = {
     { nutrient: "proteinG", value: 31.4, lessThan: false },
     { nutrient: "totalSugarG", value: 2, lessThan: true },
   ],
-  perServing: [],
 };
 
 function mustCheck(reading: LabelReading) {
@@ -127,7 +133,6 @@ Deno.test("a sparse list becomes a full nutrient table", () => {
   assertEquals(reading.per100g?.proteinG, { value: 31.4, lessThan: false });
   assertEquals(reading.per100g?.totalSugarG, { value: 2, lessThan: true });
   assertEquals(reading.per100g?.fibreG, null);
-  assertEquals(reading.perServing, null);
 });
 
 Deno.test("the first entry wins when a nutrient is repeated", () => {
@@ -157,6 +162,26 @@ Deno.test("empty-string and zero placeholders become null", () => {
   assertEquals(result.missing, ["ingredients"]);
 });
 
+Deno.test("a less-than-zero entry is ignored", () => {
+  const reading = toReading({
+    ...output,
+    per100g: [
+      { nutrient: "saturatedFatG", value: 0, lessThan: true },
+      { nutrient: "proteinG", value: 0.3, lessThan: false },
+    ],
+  });
+  assertEquals(reading.per100g?.saturatedFatG, null);
+  assertEquals(reading.per100g?.proteinG?.value, 0.3);
+});
+
+Deno.test("a block with only meaningless entries becomes null", () => {
+  const reading = toReading({
+    ...output,
+    per100g: [{ nutrient: "fatG", value: 0, lessThan: true }],
+  });
+  assertEquals(reading.per100g, null);
+});
+
 Deno.test("the JSON schema has no union types", () => {
   const schemaText = JSON.stringify(LABEL_JSON_SCHEMA);
   assertFalse(schemaText.includes("anyOf"));
@@ -169,3 +194,47 @@ Deno.test("the JSON schema and the Zod schema list the same fields", () => {
     Object.keys(modelOutputSchema.shape).sort(),
   );
 });
+
+Deno.test("a 6-for-8 digit slip in energy is flagged", () => {
+  const result = mustCheck({
+    ...base,
+    per100g: { ...jam100g, energyKcal: value(265.5) },
+  });
+  assertEquals(result.warnings, ["energy_mismatch"]);
+});
+
+Deno.test("the correctly read jam energy passes", () => {
+  const result = mustCheck({
+    ...base,
+    per100g: { ...jam100g, energyKcal: value(285.57) },
+  });
+  assertEquals(result.warnings, []);
+});
+
+Deno.test("a block with no energy is reported as incomplete", () => {
+  const result = mustCheck({
+    ...base,
+    per100g: { ...peanutButter100g, energyKcal: null },
+  });
+  assertEquals(result.warnings, ["incomplete_nutrition"]);
+});
+
+Deno.test("added sugars above total sugars are flagged", () => {
+  const result = mustCheck({
+    ...base,
+    per100g: {
+      ...peanutButter100g,
+      totalSugarG: value(5),
+      addedSugarG: value(9),
+    },
+  });
+  assertEquals(result.warnings, ["sugar_inconsistent"]);
+});
+
+Deno.test(
+  "a label with no per 100 g column reports nutrition as missing",
+  () => {
+    const result = mustCheck(toReading({ ...output, per100g: [] }));
+    assertEquals(result.missing, ["nutrition"]);
+  },
+);

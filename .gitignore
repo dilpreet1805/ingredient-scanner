@@ -38,6 +38,7 @@ yarn-error.*
 supabase/.env
 
 scripts/*.json
+scripts/*.jpg
 
 # typescript
 *.tsbuildinfo
