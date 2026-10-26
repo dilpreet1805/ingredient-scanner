@@ -1,6 +1,6 @@
 import { getDb } from "@/lib/db";
 import { imageUriFromFile, persistImage } from "@/lib/image-store";
-import type { UserProfile, WeightGoal } from "@/types";
+import type { ActivityLevel, Sex, UserProfile, WeightGoal } from "@/types";
 
 type ProfileRow = {
   name: string;
@@ -9,6 +9,8 @@ type ProfileRow = {
   height_cm: number;
   weight_kg: number;
   goal: string;
+  sex: string;
+  activity: string;
   avatar_file: string | null;
   newsletter_opt_in: number;
   goal_calories: number;
@@ -26,6 +28,8 @@ function toProfile(row: ProfileRow): UserProfile {
     heightCm: row.height_cm,
     weightKg: row.weight_kg,
     goal: row.goal as WeightGoal,
+    sex: row.sex as Sex,
+    activity: row.activity as ActivityLevel,
     avatarUri: row.avatar_file ? imageUriFromFile(row.avatar_file) : null,
     newsletterOptIn: row.newsletter_opt_in === 1,
     dailyGoals: {
@@ -55,9 +59,9 @@ export async function saveProfile(input: ProfileInput): Promise<void> {
 
   await db.runAsync(
     `INSERT INTO profile (
-       id, name, email, birth_year, height_cm, weight_kg, goal, avatar_file,
+       id, name, email, birth_year, height_cm, weight_kg, goal, sex, activity, avatar_file,
        newsletter_opt_in, goal_calories, goal_carbs_g, goal_protein_g, goal_fat_g, created_at
-     ) VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+     ) VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
      ON CONFLICT(id) DO UPDATE SET
        name = excluded.name,
        email = excluded.email,
@@ -65,6 +69,8 @@ export async function saveProfile(input: ProfileInput): Promise<void> {
        height_cm = excluded.height_cm,
        weight_kg = excluded.weight_kg,
        goal = excluded.goal,
+       sex = excluded.sex,
+       activity = excluded.activity,
        avatar_file = excluded.avatar_file,
        newsletter_opt_in = excluded.newsletter_opt_in,
        goal_calories = excluded.goal_calories,
@@ -77,6 +83,8 @@ export async function saveProfile(input: ProfileInput): Promise<void> {
     input.heightCm,
     input.weightKg,
     input.goal,
+    input.sex,
+    input.activity,
     avatarFile,
     input.newsletterOptIn ? 1 : 0,
     input.dailyGoals.calories,

@@ -82,6 +82,9 @@ export type DailyGoals = Nutrition;
 
 export type WeightGoal = "lose" | "maintain" | "gain";
 
+export type Sex = "male" | "female" | "unspecified";
+export type ActivityLevel = "sedentary" | "light" | "moderate" | "very";
+
 export type UserProfile = {
   name: string;
   email: string;
@@ -92,5 +95,7 @@ export type UserProfile = {
   avatarUri: string | null;
   newsletterOptIn: boolean;
   dailyGoals: DailyGoals;
+  sex: Sex;
+  activity: ActivityLevel;
   createdAt: string; // ISO date the profile was first saved
 };

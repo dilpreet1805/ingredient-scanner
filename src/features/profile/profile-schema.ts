@@ -1,6 +1,12 @@
 import { z } from "zod";
 
-import type { DailyGoals, UserProfile, WeightGoal } from "@/types";
+import type {
+    ActivityLevel,
+    DailyGoals,
+    Sex,
+    UserProfile,
+    WeightGoal,
+} from "@/types";
 import type { ProfileInput } from "./profile-repository";
 
 export const DEFAULT_GOALS: DailyGoals = {
@@ -22,6 +28,52 @@ export const goalLabel: Record<WeightGoal, string> = {
   gain: "Gain weight",
 };
 
+export const sexOptions: { value: Sex; label: string }[] = [
+  { value: "male", label: "Male" },
+  { value: "female", label: "Female" },
+  { value: "unspecified", label: "Prefer not to say" },
+];
+
+export const sexLabel: Record<Sex, string> = {
+  male: "Male",
+  female: "Female",
+  unspecified: "Sex not shared",
+};
+
+export const activityOptions: {
+  value: ActivityLevel;
+  label: string;
+  description: string;
+}[] = [
+  {
+    value: "sedentary",
+    label: "Mostly seated",
+    description: "Desk job, little exercise",
+  },
+  {
+    value: "light",
+    label: "Lightly active",
+    description: "Light exercise 1 to 3 days a week",
+  },
+  {
+    value: "moderate",
+    label: "Moderately active",
+    description: "Exercise 3 to 5 days a week",
+  },
+  {
+    value: "very",
+    label: "Very active",
+    description: "Hard exercise most days, or a physical job",
+  },
+];
+
+export const activityLabel: Record<ActivityLevel, string> = {
+  sedentary: "Mostly seated",
+  light: "Lightly active",
+  moderate: "Moderately active",
+  very: "Very active",
+};
+
 /**
  * Form inputs hold text, so fields are validated as strings and converted to
  * numbers on save. Ranges are product choices: adjust them as you see fit.
@@ -40,6 +92,8 @@ const numberField = (what: string, min: number, max: number, whole = false) =>
 
 const thisYear = new Date().getFullYear();
 const goalEnum = z.enum(["lose", "maintain", "gain"]);
+const sexEnum = z.enum(["male", "female", "unspecified"]);
+const activityEnum = z.enum(["sedentary", "light", "moderate", "very"]);
 
 export const personalSchema = z.object({
   name: z
@@ -60,6 +114,8 @@ export const personalSchema = z.object({
   ),
   heightCm: numberField("your height", 100, 250),
   weightKg: numberField("your weight", 20, 300),
+  sex: sexEnum,
+  activity: activityEnum,
   goal: goalEnum,
   newsletterOptIn: z.boolean(),
 });
@@ -80,6 +136,8 @@ export const emptyPersonalValues: PersonalValues = {
   birthYear: "",
   heightCm: "",
   weightKg: "",
+  sex: "unspecified",
+  activity: "light",
   goal: "maintain",
   newsletterOptIn: false,
 };
@@ -91,6 +149,8 @@ export function profileToPersonalValues(p: UserProfile): PersonalValues {
     birthYear: String(p.birthYear),
     heightCm: String(p.heightCm),
     weightKg: String(p.weightKg),
+    sex: p.sex,
+    activity: p.activity,
     goal: p.goal,
     newsletterOptIn: p.newsletterOptIn,
   };
@@ -107,6 +167,8 @@ export function personalValuesToInput(
     birthYear: Number(v.birthYear),
     heightCm: Number(v.heightCm),
     weightKg: Number(v.weightKg),
+    sex: v.sex,
+    activity: v.activity,
     goal: v.goal,
     avatarUri,
     newsletterOptIn: v.newsletterOptIn,

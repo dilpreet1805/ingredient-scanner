@@ -37,6 +37,9 @@ const migrations: string[] = [
      goal_fat_g INTEGER NOT NULL,
      created_at TEXT NOT NULL
    );`,
+
+  `ALTER TABLE profile ADD COLUMN sex TEXT NOT NULL DEFAULT 'unspecified';
+   ALTER TABLE profile ADD COLUMN activity TEXT NOT NULL DEFAULT 'light';`,
 ];
 
 async function migrate(db: SQLite.SQLiteDatabase) {

@@ -20,7 +20,7 @@ export default function Onboarding() {
   };
 
   return (
-    <Screen>
+    <Screen safeBottom>
       <View className="gap-1">
         <AppText variant="heading">Welcome</AppText>
         <AppText variant="caption">

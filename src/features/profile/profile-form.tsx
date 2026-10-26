@@ -9,17 +9,21 @@ import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { FormField } from "@/components/ui/form-field";
+import { OptionList } from "@/components/ui/option-list";
 import { SegmentedControl } from "@/components/ui/segmented-control";
 import { colors } from "@/constants/colors";
 import { usePhotoCapture } from "@/features/decode/use-photo-capture";
+import { suggestTargets } from "@/lib/nutrition-targets";
 import type { UserProfile } from "@/types";
 import {
+    activityOptions,
     DEFAULT_GOALS,
     emptyPersonalValues,
     goalOptions,
     personalSchema,
     personalValuesToInput,
     profileToPersonalValues,
+    sexOptions,
     type PersonalValues,
 } from "./profile-schema";
 import { useSaveProfile } from "./use-profile";
@@ -81,12 +85,24 @@ export function ProfileForm({ initial, submitLabel, onSaved }: Props) {
 
   const onSubmit = handleSubmit(async (values) => {
     setSaveError(null);
+
+    const suggestion = suggestTargets({
+      sex: values.sex,
+      activity: values.activity,
+      goal: values.goal,
+      birthYear: Number(values.birthYear),
+      heightCm: Number(values.heightCm),
+      weightKg: Number(values.weightKg),
+    });
+    const startingGoals =
+      suggestion.status === "ok" ? suggestion.goals : DEFAULT_GOALS;
+
     try {
       await save.mutateAsync(
         personalValuesToInput(
           values,
           avatarUri,
-          initial?.dailyGoals ?? DEFAULT_GOALS,
+          initial?.dailyGoals ?? startingGoals,
         ),
       );
       onSaved();
@@ -168,6 +184,51 @@ export function ProfileForm({ initial, submitLabel, onSaved }: Props) {
           </View>
         </View>
 
+        <Controller
+          control={control}
+          name="sex"
+          render={({ field }) => (
+            <View className="gap-1.5">
+              <AppText
+                variant="body"
+                className="font-body-semibold text-forest"
+              >
+                Sex
+              </AppText>
+              <SegmentedControl
+                label="Sex"
+                options={sexOptions}
+                value={field.value}
+                onChange={field.onChange}
+              />
+              <AppText variant="caption">
+                Used to estimate calorie needs. "Prefer not to say" uses an
+                average, which is less precise.
+              </AppText>
+            </View>
+          )}
+        />
+
+        <Controller
+          control={control}
+          name="activity"
+          render={({ field }) => (
+            <View className="gap-1.5">
+              <AppText
+                variant="body"
+                className="font-body-semibold text-forest"
+              >
+                Activity level
+              </AppText>
+              <OptionList
+                label="Activity level"
+                options={activityOptions}
+                value={field.value}
+                onChange={field.onChange}
+              />
+            </View>
+          )}
+        />
         <Controller
           control={control}
           name="goal"

@@ -89,7 +89,7 @@ function Hub({ profile }: { profile: UserProfile }) {
   const version = Constants.expoConfig?.version ?? "1.0.0";
 
   return (
-    <Screen>
+    <Screen safeBottom>
       <BackButton />
       <View className="gap-1">
         <AppText variant="heading">Profile</AppText>

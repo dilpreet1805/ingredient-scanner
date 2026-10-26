@@ -10,7 +10,7 @@ export default function PersonalInformation() {
   return (
     <ProfileGate>
       {(profile) => (
-        <Screen>
+        <Screen safeBottom>
           <BackButton />
           <AppText variant="heading">Personal information</AppText>
           <ProfileForm

@@ -32,7 +32,7 @@ export default function PrivacyAndSecurity() {
   };
 
   return (
-    <Screen>
+    <Screen safeBottom>
       <BackButton />
       <AppText variant="heading">Privacy & security</AppText>
 
