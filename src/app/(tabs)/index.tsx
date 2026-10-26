@@ -9,11 +9,13 @@ import { Screen } from "@/components/ui/screen";
 import { colors } from "@/constants/colors";
 import { useScans } from "@/features/decode/use-scans";
 import { BmiCard } from "@/features/home/bmi-card";
-import { eatenToday } from "@/features/home/fixtures";
 import { NutritionCard } from "@/features/home/nutrition-card";
 import { RecentScans } from "@/features/home/recent-scans";
+import { useMealsForDate } from "@/features/planner/use-meals";
 import { AvatarMenu } from "@/features/profile/avatar-menu";
 import { ProfileGate } from "@/features/profile/profile-gate";
+import { toDateKey } from "@/lib/dates";
+import { itemTotals, sumNutrition } from "@/lib/meal-math";
 import type { UserProfile } from "@/types";
 
 function greeting() {
@@ -25,7 +27,8 @@ function greeting() {
 
 function HomeContent({ profile }: { profile: UserProfile }) {
   const { data: scans = [] } = useScans();
-
+  const { data: meals = [] } = useMealsForDate(toDateKey(new Date()));
+  const eaten = sumNutrition(meals.map(itemTotals));
   return (
     <Screen>
       <View className="flex-row items-center justify-between">
@@ -39,7 +42,7 @@ function HomeContent({ profile }: { profile: UserProfile }) {
         <AvatarMenu profile={profile} />
       </View>
 
-      <NutritionCard eaten={eatenToday} goals={profile.dailyGoals} />
+      <NutritionCard eaten={eaten} goals={profile.dailyGoals} />
       <BmiCard profile={profile} />
 
       <Card className="gap-3 bg-accent-soft">

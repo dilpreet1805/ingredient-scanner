@@ -41,9 +41,13 @@ function MacroRow(props: {
   );
 }
 
-type Props = { eaten: Nutrition; goals: DailyGoals };
+type Props = { eaten: Nutrition; goals: DailyGoals; title?: string };
 
-export function NutritionCard({ eaten, goals }: Props) {
+export function NutritionCard({
+  eaten,
+  goals,
+  title = "Calories today",
+}: Props) {
   const diff = goals.calories - eaten.calories;
   const diffLabel =
     diff >= 0 ? `${Math.round(diff)} left` : `${Math.round(-diff)} over`;
@@ -55,7 +59,7 @@ export function NutritionCard({ eaten, goals }: Props) {
           <IconChip>
             <Ionicons name="flame" size={20} color={colors.accent} />
           </IconChip>
-          <AppText variant="caption">Calories today</AppText>
+          <AppText variant="caption">{title}</AppText>
         </View>
 
         <View className="flex-row items-end justify-between">

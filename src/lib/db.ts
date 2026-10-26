@@ -40,6 +40,24 @@ const migrations: string[] = [
 
   `ALTER TABLE profile ADD COLUMN sex TEXT NOT NULL DEFAULT 'unspecified';
    ALTER TABLE profile ADD COLUMN activity TEXT NOT NULL DEFAULT 'light';`,
+
+  `CREATE TABLE meals (
+     id TEXT PRIMARY KEY NOT NULL,
+     date TEXT NOT NULL,
+     meal_type TEXT NOT NULL,
+     name TEXT NOT NULL,
+     basis TEXT NOT NULL,
+     quantity REAL NOT NULL,
+     calories REAL NOT NULL,
+     carbs_g REAL NOT NULL,
+     protein_g REAL NOT NULL,
+     fat_g REAL NOT NULL,
+     source TEXT NOT NULL,
+     scan_id TEXT,
+     category TEXT,
+     created_at TEXT NOT NULL
+   );
+   CREATE INDEX idx_meals_date ON meals (date);`,
 ];
 
 async function migrate(db: SQLite.SQLiteDatabase) {

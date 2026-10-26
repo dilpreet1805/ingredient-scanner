@@ -61,15 +61,22 @@ export type ScanAnalysis = Pick<
   | "nutritionPer100g"
 >;
 
+export type MealBasis = "serving" | "per100g";
+export type MealSource = "manual" | "scan" | "photo";
 export type MealType = "breakfast" | "lunch" | "dinner" | "snack";
 
-export type Meal = {
+export type MealItem = {
   id: string;
-  date: string; // "YYYY-MM-DD"
+  date: string; // "YYYY-MM-DD", the user's local date
   type: MealType;
   name: string;
-  nutrition: Nutrition;
-  source: "manual" | "photo";
+  basis: MealBasis;
+  quantity: number; // number of servings, or grams
+  nutrition: Nutrition; // for ONE serving, or for 100 g
+  source: MealSource;
+  scanId: string | null;
+  category: ProductCategory | null;
+  createdAt: string;
 };
 
 export type FoodEstimate = {
