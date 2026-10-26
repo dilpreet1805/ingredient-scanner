@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-// Must match ProductCategory in the app (src/types/index.ts).
+// "spread" must also be added to ProductCategory in the app (done in step 6.6).
 export const CATEGORIES = [
   "noodles",
   "bread",
@@ -13,6 +13,7 @@ export const CATEGORIES = [
   "frozen",
   "fruit_veg",
   "meat_fish",
+  "spread",
   "other",
 ] as const;
 
@@ -22,6 +23,7 @@ export const NUTRIENT_KEYS = [
   "carbsG",
   "totalSugarG",
   "addedSugarG",
+  "polyolG",
   "fibreG",
   "fatG",
   "saturatedFatG",
@@ -32,17 +34,19 @@ export const NUTRIENT_KEYS = [
 
 export type NutrientKey = (typeof NUTRIENT_KEYS)[number];
 
+// Which column of the label the values come from.
+export const BASES = ["per100g", "per100ml", "perServing", "none"] as const;
+export type NutritionBasis = Exclude<(typeof BASES)[number], "none">;
+
 // ---------- 1. Wire format: what Claude returns (no nullable fields) ----------
 
-// "<2 g" is { nutrient: "totalSugarG", value: 2, lessThan: true }.
+// The value is copied as text exactly as printed: "62.6", "0.0", "<2", "TRACE".
 const entry = z.object({
   nutrient: z.enum(NUTRIENT_KEYS),
-  value: z.number(),
-  lessThan: z.boolean(),
+  printed: z.string(),
 });
 
 // Empty string means "not visible". 0 servings means "not printed".
-// An empty list means "the per 100 g column is not printed".
 export const modelOutputSchema = z.object({
   isFoodLabel: z.boolean(),
   brand: z.string(),
@@ -52,7 +56,8 @@ export const modelOutputSchema = z.object({
   allergenStatements: z.array(z.string()),
   servingSize: z.string(),
   servingsPerPack: z.number(),
-  per100g: z.array(entry),
+  nutritionBasis: z.enum(BASES),
+  nutrition: z.array(entry),
 });
 
 export type ModelOutput = z.infer<typeof modelOutputSchema>;
@@ -64,10 +69,9 @@ const entryJson = {
   type: "object",
   properties: {
     nutrient: { type: "string", enum: [...NUTRIENT_KEYS] },
-    value: { type: "number" },
-    lessThan: { type: "boolean" },
+    printed: text,
   },
-  required: ["nutrient", "value", "lessThan"],
+  required: ["nutrient", "printed"],
   additionalProperties: false,
 };
 
@@ -82,16 +86,54 @@ export const LABEL_JSON_SCHEMA = {
     allergenStatements: { type: "array", items: text },
     servingSize: text,
     servingsPerPack: { type: "number" },
-    per100g: { type: "array", items: entryJson },
+    nutritionBasis: { type: "string", enum: [...BASES] },
+    nutrition: { type: "array", items: entryJson },
   },
   required: Object.keys(modelOutputSchema.shape),
   additionalProperties: false,
 };
 
-// ---------- 2. App shape: what the function returns ----------
+// ---------- 2. Turning printed text into numbers (our code, fully tested) ----------
 
 export type NutrientValue = { value: number; lessThan: boolean };
 export type Nutrients = Record<NutrientKey, NutrientValue | null>;
+
+/** Turns text copied from a label into a number. Words like TRACE or NA give null. */
+export function parsePrinted(printed: string): NutrientValue | null {
+  const text = printed.trim().toLowerCase();
+  if (/^(nil|zero)\b/.test(text)) return { value: 0, lessThan: false };
+
+  const lessThan = /^\s*[<≤]/.test(text) || text.startsWith("less than");
+  const match = text.match(/\d+(?:[.,]\d+)*|[.,]\d+/);
+  if (!match) return null;
+
+  // "2,603" uses a comma for thousands. "1,5" uses a comma as the decimal point.
+  const raw = match[0];
+  const normalized = /^\d{1,3}(,\d{3})+(\.\d+)?$/.test(raw)
+    ? raw.replace(/,/g, "")
+    : raw.replace(",", ".");
+
+  const value = Number(normalized);
+  return Number.isFinite(value) ? { value, lessThan } : null;
+}
+
+function toNutrients(entries: ModelOutput["nutrition"]): Nutrients | null {
+  const result = Object.fromEntries(
+    NUTRIENT_KEYS.map((key) => [key, null]),
+  ) as Nutrients;
+  const seen = new Set<NutrientKey>();
+  for (const item of entries) {
+    if (seen.has(item.nutrient)) continue; // the first entry wins
+    const parsed = parsePrinted(item.printed);
+    if (!parsed) continue; // a word such as TRACE or NA
+    if (parsed.lessThan && parsed.value <= 0) continue; // "less than zero" means nothing
+    seen.add(item.nutrient);
+    result[item.nutrient] = parsed;
+  }
+  return seen.size === 0 ? null : result;
+}
+
+// ---------- 3. App shape: what the function returns ----------
 
 export type LabelReading = {
   isFoodLabel: boolean;
@@ -102,25 +144,13 @@ export type LabelReading = {
   allergenStatements: string[];
   servingSize: string | null;
   servingsPerPack: number | null;
-  per100g: Nutrients | null;
+  nutrition: { basis: NutritionBasis; values: Nutrients } | null;
 };
-
-function toNutrients(entries: ModelOutput["per100g"]): Nutrients | null {
-  const result = Object.fromEntries(
-    NUTRIENT_KEYS.map((key) => [key, null]),
-  ) as Nutrients;
-  const seen = new Set<NutrientKey>();
-  for (const item of entries) {
-    if (seen.has(item.nutrient)) continue; // the first entry wins
-    if (item.lessThan && item.value <= 0) continue; // "less than zero" means nothing, e.g. TRACE
-    seen.add(item.nutrient);
-    result[item.nutrient] = { value: item.value, lessThan: item.lessThan };
-  }
-  return seen.size === 0 ? null : result;
-}
 
 /** Converts the wire format to the app shape. Placeholders are cleaned in checkReading. */
 export function toReading(output: ModelOutput): LabelReading {
+  const values =
+    output.nutritionBasis === "none" ? null : toNutrients(output.nutrition);
   return {
     isFoodLabel: output.isFoodLabel,
     brand: output.brand,
@@ -130,11 +160,14 @@ export function toReading(output: ModelOutput): LabelReading {
     allergenStatements: output.allergenStatements,
     servingSize: output.servingSize,
     servingsPerPack: output.servingsPerPack,
-    per100g: toNutrients(output.per100g),
+    nutrition:
+      values && output.nutritionBasis !== "none"
+        ? { basis: output.nutritionBasis, values }
+        : null,
   };
 }
 
-// ---------- 3. Our own checks on what Claude returned ----------
+// ---------- 4. Our own checks on what Claude returned ----------
 
 export type Missing = "ingredients" | "nutrition";
 export type Warning =
@@ -157,6 +190,7 @@ const GRAM_KEYS = [
   "carbsG",
   "totalSugarG",
   "addedSugarG",
+  "polyolG",
   "fibreG",
   "fatG",
   "saturatedFatG",
@@ -172,14 +206,17 @@ const clean = (value: string | null, max: number): string | null => {
   return trimmed.length > 0 ? trimmed : null;
 };
 
-function valuesPlausible(n: Nutrients): boolean {
+function valuesPlausible(n: Nutrients, basis: NutritionBasis): boolean {
+  const gramLimit = basis === "perServing" ? 1000 : 100;
+  const kcalLimit = basis === "perServing" ? 5000 : 950;
+
   for (const key of NUTRIENT_KEYS) {
     const v = n[key]?.value;
     if (v !== undefined && (!Number.isFinite(v) || v < 0)) return false;
   }
-  if ((n.energyKcal?.value ?? 0) > 950) return false;
+  if ((n.energyKcal?.value ?? 0) > kcalLimit) return false;
   for (const key of GRAM_KEYS) {
-    if ((n[key]?.value ?? 0) > 100) return false;
+    if ((n[key]?.value ?? 0) > gramLimit) return false;
   }
   if ((n.sodiumMg?.value ?? 0) > 40_000) return false;
   if ((n.cholesterolMg?.value ?? 0) > 3_000) return false;
@@ -190,7 +227,10 @@ function coreComplete(n: Nutrients): boolean {
   return CORE_KEYS.every((key) => n[key] !== null);
 }
 
-/** Energy should roughly equal 4 x protein + 4 x carbs + 9 x fat. */
+/**
+ * Energy should roughly equal 4 x protein + 4 x digestible carbs + 9 x fat,
+ * with fibre counted at 2 and polyols at 2.4 kcal per gram.
+ */
 function energyConsistent(n: Nutrients): boolean {
   const energy = n.energyKcal?.value;
   const protein = n.proteinG?.value;
@@ -204,8 +244,13 @@ function energyConsistent(n: Nutrients): boolean {
   ) {
     return true; // not enough values to check; coreComplete reports that case
   }
-  const expected = 4 * protein + 4 * carbs + 9 * fat;
-  return Math.abs(energy - expected) <= Math.max(0.05 * expected, 10);
+  const fibre = n.fibreG?.value ?? 0;
+  const polyol = n.polyolG?.value ?? 0;
+  const digestible = Math.max(carbs - fibre - polyol, 0);
+  const expected =
+    4 * protein + 4 * digestible + 2 * fibre + 2.4 * polyol + 9 * fat;
+  const tolerance = polyol > 0 ? 0.12 : 0.05;
+  return Math.abs(energy - expected) <= Math.max(tolerance * expected, 10);
 }
 
 /** Added sugars cannot exceed total sugars, which cannot exceed carbohydrates. */
@@ -228,15 +273,17 @@ export function checkReading(input: LabelReading): CheckedReading {
     if (!warnings.includes(w)) warnings.push(w);
   };
 
-  const cleanBlock = (block: Nutrients | null): Nutrients | null => {
+  const cleanNutrition = (
+    block: LabelReading["nutrition"],
+  ): LabelReading["nutrition"] => {
     if (!block) return null;
-    if (!valuesPlausible(block)) {
+    if (!valuesPlausible(block.values, block.basis)) {
       warn("values_out_of_range");
       return null; // never pass nonsense to the app
     }
-    if (!coreComplete(block)) warn("incomplete_nutrition");
-    if (!energyConsistent(block)) warn("energy_mismatch");
-    if (!sugarsConsistent(block)) warn("sugar_inconsistent");
+    if (!coreComplete(block.values)) warn("incomplete_nutrition");
+    if (!energyConsistent(block.values)) warn("energy_mismatch");
+    if (!sugarsConsistent(block.values)) warn("sugar_inconsistent");
     return block;
   };
 
@@ -259,12 +306,12 @@ export function checkReading(input: LabelReading): CheckedReading {
       servings <= 1000
         ? servings
         : null,
-    per100g: cleanBlock(input.per100g),
+    nutrition: cleanNutrition(input.nutrition),
   };
 
   const missing: Missing[] = [];
   if (!reading.ingredientsText) missing.push("ingredients");
-  if (!reading.per100g) missing.push("nutrition");
+  if (!reading.nutrition) missing.push("nutrition");
 
   return { ok: true, reading, missing, warnings };
 }

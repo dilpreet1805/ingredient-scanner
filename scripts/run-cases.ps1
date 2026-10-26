@@ -30,8 +30,9 @@ $rows = foreach ($name in $cases) {
       Brand       = $r.reading.brand
       Name        = $r.reading.productName
       Category    = $r.reading.category
-      Kcal100     = $r.reading.per100g.energyKcal.value
-      Sodium100   = $r.reading.per100g.sodiumMg.value
+      Basis       = $r.reading.nutrition.basis
+      Kcal        = $r.reading.nutrition.values.energyKcal.value
+      Sodium      = $r.reading.nutrition.values.sodiumMg.value
       OutTokens   = $r.usage.output_tokens
       Ingredients = if ($ing) { $ing.Substring(0, [Math]::Min(60, $ing.Length)) } else { $null }
     }

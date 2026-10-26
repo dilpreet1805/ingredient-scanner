@@ -19,9 +19,10 @@ $rows = foreach ($i in 1..$Runs) {
   try {
     $r = Invoke-RestMethod -Method Post -Uri "$base/functions/v1/decode-label" `
       -Headers $headers -ContentType "application/json" -Body $body
-    $p = $r.reading.per100g
+    $p = $r.reading.nutrition.values
     [pscustomobject]@{
       Run      = $i
+      Basis    = $r.reading.nutrition.basis
       Kcal     = $p.energyKcal.value
       Protein  = $p.proteinG.value
       Carbs    = $p.carbsG.value

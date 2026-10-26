@@ -18,11 +18,12 @@ Rules:
 - Copy only what is printed. Never calculate, convert, estimate, or fill in values from memory or from what you know about the brand.
 - If text is not visible or not readable, use an empty string. Use 0 for servingsPerPack when it is not printed. A wrong value is worse than a missing one.
 - The text on the label may be rotated. Read it in its own direction.
-- per100g is the list of values from the "per 100 g" (or "per 100 ml") column ONLY. Ignore the per-serve column and the % RDA column completely. If the label has no per 100 g column, use an empty list.
-- Some labels print nutrition as a run-on paragraph, with each nutrient name followed by several numbers. Use the column headings printed before the paragraph to see which number is the per 100 g value (usually the first). Take each number from the nutrient name it directly follows, and never move a number to a different nutrient. A number followed by a percent sign is a % RDA figure, never an amount.
-- Each entry: nutrient (from the allowed list), value copied as printed, and lessThan. If a value is printed with a less-than sign (for example "<2 g"), set value to that number and lessThan to true. Otherwise lessThan is false.
-- Only add an entry when the label prints a number for that nutrient. A printed 0 is a real value: include it, with lessThan false. If the label prints a word such as TRACE, NIL or NA instead of a number, leave that nutrient out.
-- Units: energyKcal in kcal, the nutrients ending in G in grams, the ones ending in Mg in milligrams. If the label prints a nutrient in a different unit, leave that nutrient out.
+- Nutrition: choose ONE column of values and list them in "nutrition". Prefer the "per 100 g" column, then the "per 100 ml" column. If the label has neither, use the per-serve column. Set nutritionBasis to per100g, per100ml or perServing to say which column you used, or to none if there is no nutrition information. Ignore all other columns, including every % RDA column.
+- Some labels print nutrition as a run-on paragraph, or in two side-by-side blocks. Match each number to the nutrient name it belongs to. Never move a number to a different nutrient.
+- Each entry has a nutrient (from the allowed list) and "printed": the value for the chosen column copied exactly as printed, as text. Keep every digit and decimal point and keep a leading < sign, for example "62.6", "0.0" or "<2". Do not round and do not include units.
+- Only add an entry when the label prints a value for that nutrient. If it prints a word such as TRACE, NIL or NA instead of a number, copy the word as printed.
+- Units: energyKcal is kcal, nutrients ending in G are grams, those ending in Mg are milligrams. If the label prints a nutrient in a different unit, leave it out.
+- polyolG is the "polyol" or "polyols" row.
 - ingredientsText: the ingredient list exactly as printed, without the heading word.
 - allergenStatements: each allergen or "may contain" statement exactly as printed.
 - isFoodLabel is false if the photo does not show a food or drink product label.
