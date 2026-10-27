@@ -1,3 +1,6 @@
+import { createClient } from "@supabase/supabase-js";
+
+import { readLimits, todayInIndia } from "./limits.ts";
 import {
   checkReading,
   LABEL_JSON_SCHEMA,
@@ -18,6 +21,7 @@ Rules:
 - Copy only what is printed. Never calculate, convert, estimate, or fill in values from memory or from what you know about the brand.
 - If text is not visible or not readable, use an empty string. Use 0 for servingsPerPack when it is not printed. A wrong value is worse than a missing one.
 - The text on the label may be rotated. Read it in its own direction.
+- brand: the brand name written in words. If only a logo, symbol or QR code is visible, use an empty string.
 - Nutrition: choose ONE column of values and list them in "nutrition". Prefer the "per 100 g" column, then the "per 100 ml" column. If the label has neither, use the per-serve column. Set nutritionBasis to per100g, per100ml or perServing to say which column you used, or to none if there is no nutrition information. Ignore all other columns, including every % RDA column.
 - Some labels print nutrition as a run-on paragraph, or in two side-by-side blocks. Match each number to the nutrient name it belongs to. Never move a number to a different nutrient.
 - Each entry has a nutrient (from the allowed list) and "printed": the value for the chosen column copied exactly as printed, as text. Keep every digit and decimal point and keep a leading < sign, for example "62.6", "0.0" or "<2". Do not round and do not include units.
@@ -59,6 +63,34 @@ function matchesType(b64: string, type: AllowedType): boolean {
   return ascii.startsWith("RIFF") && ascii.slice(8, 12) === "WEBP";
 }
 
+/** The server-side Supabase key. Supabase provides these to every function. */
+function serviceKey(): string | null {
+  const legacy = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  if (legacy) return legacy;
+  try {
+    const keys = JSON.parse(Deno.env.get("SUPABASE_SECRET_KEYS") ?? "{}");
+    return typeof keys.default === "string" ? keys.default : null;
+  } catch {
+    return null;
+  }
+}
+
+function adminClient() {
+  const url = Deno.env.get("SUPABASE_URL");
+  const key = serviceKey();
+  if (!url || !key) return null;
+  return createClient(url, key, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+}
+
+type Quota = {
+  status: string;
+  used?: number;
+  limit?: number;
+  subscriber?: boolean;
+};
+
 Deno.serve(async (req: Request): Promise<Response> => {
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
@@ -73,6 +105,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
     return json({ error: "Service unavailable" }, 503);
   }
 
+  // 1. Cheap checks first. A malformed request never uses up anyone's quota.
   let body: unknown;
   try {
     body = await req.json();
@@ -100,6 +133,67 @@ Deno.serve(async (req: Request): Promise<Response> => {
     return json({ error: "Invalid image data" }, 400);
   }
 
+  // 2. Who is calling? The platform already rejected bad tokens. This asks the Auth server
+  // who the token belongs to (and fails for a deleted user).
+  const admin = adminClient();
+  if (!admin) {
+    console.error("Supabase server credentials are not available");
+    return json({ error: "Service unavailable" }, 503);
+  }
+
+  const token = (req.headers.get("Authorization") ?? "").replace(
+    /^Bearer\s+/i,
+    "",
+  );
+  const { data: userData, error: userError } = await admin.auth.getUser(token);
+  const userId = userData?.user?.id;
+  if (userError || !userId) return json({ error: "Unauthorized" }, 401);
+
+  // 3. Count this decode BEFORE spending anything. If we cannot count, we do not call Claude.
+  const limits = readLimits((name) => Deno.env.get(name));
+  const day = todayInIndia();
+
+  const { data: quotaData, error: quotaError } = await admin.rpc(
+    "consume_decode",
+    {
+      p_user: userId,
+      p_day: day,
+      p_user_limit: limits.user,
+      p_subscriber_limit: limits.subscriber,
+      p_global_limit: limits.global,
+    },
+  );
+  const quota = quotaData as Quota | null;
+  if (quotaError || !quota) {
+    console.error("consume_decode failed:", quotaError?.code);
+    return json({ error: "Service unavailable" }, 503);
+  }
+  if (quota.status === "user_limit") {
+    return json(
+      {
+        error: "daily_limit",
+        limit: quota.limit,
+        subscriber: quota.subscriber,
+      },
+      429,
+    );
+  }
+  if (quota.status === "global_limit") return json({ error: "capacity" }, 503);
+  if (quota.status !== "ok") {
+    console.error("Unexpected quota status:", quota.status);
+    return json({ error: "Service unavailable" }, 503);
+  }
+
+  // Gives the decode back. Used only when Claude never answered, so we were not billed.
+  const refund = async () => {
+    const { error } = await admin.rpc("refund_decode", {
+      p_user: userId,
+      p_day: day,
+    });
+    if (error) console.error("refund_decode failed:", error.code);
+  };
+
+  // 4. Ask Claude.
   let upstream: Response;
   try {
     upstream = await fetch("https://api.anthropic.com/v1/messages", {
@@ -138,6 +232,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
       "Claude request failed:",
       error instanceof Error ? error.name : "unknown",
     );
+    await refund();
     return json({ error: "Service unavailable" }, 503);
   }
 
@@ -150,9 +245,11 @@ Deno.serve(async (req: Request): Promise<Response> => {
       problem?.error?.type,
       String(problem?.error?.message ?? "").slice(0, 200),
     );
+    await refund();
     return json({ error: "Service unavailable" }, 502);
   }
 
+  // From here on Claude has answered, so we were billed. No refunds, even if we reject the output.
   const data = await upstream.json();
   if (data.stop_reason !== "end_turn") {
     console.error("Unexpected stop reason:", data.stop_reason);
@@ -185,14 +282,22 @@ Deno.serve(async (req: Request): Promise<Response> => {
     return json({ error: "Service unavailable" }, 502);
   }
 
+  const quotaInfo = {
+    used: quota.used,
+    limit: quota.limit,
+    subscriber: quota.subscriber,
+  };
+
   const checked = checkReading(toReading(validated.data));
-  if (!checked.ok) return json({ ok: false, reason: checked.reason });
+  if (!checked.ok)
+    return json({ ok: false, reason: checked.reason, quota: quotaInfo });
 
   return json({
     ok: true,
     reading: checked.reading,
     missing: checked.missing,
     warnings: checked.warnings,
+    quota: quotaInfo,
     usage: data.usage, // temporary, so you can see what a call costs
   });
 });
