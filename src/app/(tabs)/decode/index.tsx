@@ -9,11 +9,11 @@ import { Card } from "@/components/ui/card";
 import { Screen } from "@/components/ui/screen";
 import { colors } from "@/constants/colors";
 import { useCaptureDraft } from "@/features/decode/capture-draft";
+import { DevSessionCheck } from "@/features/decode/dev-session-check";
 import { ScanListItem } from "@/features/decode/scan-list-item";
 import { TipsSheet } from "@/features/decode/tips-sheet";
 import { usePhotoCapture } from "@/features/decode/use-photo-capture";
 import { useScans } from "@/features/decode/use-scans";
-
 export default function Decode() {
   const { cameraBlocked, takePhoto, pickPhoto } = usePhotoCapture();
   const [tipsOpen, setTipsOpen] = useState(false);
@@ -150,7 +150,7 @@ export default function Decode() {
           <Ionicons name="chevron-forward" size={18} color={colors.muted} />
         </Pressable>
       </Card>
-
+      {__DEV__ && <DevSessionCheck />}
       <TipsSheet visible={tipsOpen} onClose={() => setTipsOpen(false)} />
     </Screen>
   );
