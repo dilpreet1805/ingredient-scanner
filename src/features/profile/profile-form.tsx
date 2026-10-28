@@ -12,19 +12,20 @@ import { FormField } from "@/components/ui/form-field";
 import { OptionList } from "@/components/ui/option-list";
 import { SegmentedControl } from "@/components/ui/segmented-control";
 import { colors } from "@/constants/colors";
+import { useAgeStore } from "@/features/age/age-store";
 import { usePhotoCapture } from "@/features/decode/use-photo-capture";
 import { suggestTargets } from "@/lib/nutrition-targets";
 import type { UserProfile } from "@/types";
 import {
-    activityOptions,
-    DEFAULT_GOALS,
-    emptyPersonalValues,
-    goalOptions,
-    personalSchema,
-    personalValuesToInput,
-    profileToPersonalValues,
-    sexOptions,
-    type PersonalValues,
+  activityOptions,
+  DEFAULT_GOALS,
+  emptyPersonalValues,
+  goalOptions,
+  personalSchema,
+  personalValuesToInput,
+  profileToPersonalValues,
+  sexOptions,
+  type PersonalValues,
 } from "./profile-schema";
 import { useSaveProfile } from "./use-profile";
 
@@ -41,7 +42,7 @@ export function ProfileForm({ initial, submitLabel, onSaved }: Props) {
     initial?.avatarUri ?? null,
   );
   const [saveError, setSaveError] = useState<string | null>(null);
-
+  const birthYearFromAge = useAgeStore((s) => s.birthYear);
   const {
     control,
     handleSubmit,
@@ -50,7 +51,10 @@ export function ProfileForm({ initial, submitLabel, onSaved }: Props) {
     resolver: zodResolver(personalSchema),
     defaultValues: initial
       ? profileToPersonalValues(initial)
-      : emptyPersonalValues,
+      : {
+          ...emptyPersonalValues,
+          birthYear: birthYearFromAge ? String(birthYearFromAge) : "",
+        },
   });
 
   const name = useWatch({ control, name: "name" });
@@ -152,15 +156,12 @@ export function ProfileForm({ initial, submitLabel, onSaved }: Props) {
           placeholder="you@example.com"
           hint="Used for receipts and account messages."
         />
-        <FormField
-          control={control}
-          name="birthYear"
-          label="Birth year"
-          error={errors.birthYear?.message}
-          keyboardType="number-pad"
-          maxLength={4}
-          placeholder="e.g. 1998"
-        />
+        {initial && (
+          <AppText variant="caption">
+            Born in {initial.birthYear}. To correct it, use Privacy & security,
+            then Delete all my data.
+          </AppText>
+        )}
         <View className="flex-row gap-3">
           <View className="flex-1">
             <FormField

@@ -74,7 +74,7 @@ function HomeContent({ profile }: { profile: UserProfile }) {
 
 export default function Home() {
   return (
-    <ProfileGate redirectIfMissing>
+    <ProfileGate startOnDecode>
       {(profile) => <HomeContent profile={profile} />}
     </ProfileGate>
   );

@@ -8,8 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Screen } from "@/components/ui/screen";
 import { colors } from "@/constants/colors";
+import { DevAgeReset } from "@/features/age/dev-age-reset";
 import { useCaptureDraft } from "@/features/decode/capture-draft";
-import { DevSessionCheck } from "@/features/decode/dev-session-check";
 import { ScanListItem } from "@/features/decode/scan-list-item";
 import { TipsSheet } from "@/features/decode/tips-sheet";
 import { usePhotoCapture } from "@/features/decode/use-photo-capture";
@@ -150,7 +150,7 @@ export default function Decode() {
           <Ionicons name="chevron-forward" size={18} color={colors.muted} />
         </Pressable>
       </Card>
-      {__DEV__ && <DevSessionCheck />}
+      <DevAgeReset />
       <TipsSheet visible={tipsOpen} onClose={() => setTipsOpen(false)} />
     </Screen>
   );

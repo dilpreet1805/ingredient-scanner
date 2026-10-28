@@ -1,13 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
+import { useAgeStore } from "@/features/age/age-store";
 import { deleteAllData } from "@/lib/data-reset";
-import { useOnboarding } from "./onboarding-state";
 import {
-    getProfile,
-    saveProfile,
-    type ProfileInput,
+  getProfile,
+  saveProfile,
+  type ProfileInput,
 } from "./profile-repository";
-
 const profileKey = ["profile"] as const;
 
 /** data is null when no profile exists yet. */
@@ -28,7 +27,7 @@ export function useDeleteAllData() {
   return useMutation({
     mutationFn: deleteAllData,
     onSuccess: () => {
-      useOnboarding.getState().reset();
+      void useAgeStore.getState().reset();
       return queryClient.resetQueries();
     },
   });

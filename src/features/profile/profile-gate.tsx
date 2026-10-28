@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Redirect, router } from "expo-router";
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import { View } from "react-native";
 
 import { AppText } from "@/components/ui/app-text";
@@ -8,19 +8,34 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Screen } from "@/components/ui/screen";
 import { colors } from "@/constants/colors";
+import { useAgeStore } from "@/features/age/age-store";
 import type { UserProfile } from "@/types";
-import { useOnboarding } from "./onboarding-state";
+import { useLaunch } from "./launch-state";
 import { useProfile } from "./use-profile";
 
 type Props = {
   children: (profile: UserProfile) => ReactNode;
-  /** Only the first screen the app opens on should do this. */
-  redirectIfMissing?: boolean;
+  /** Only Home sets this: when the app starts with no profile, it opens on Decode. */
+  startOnDecode?: boolean;
 };
 
-export function ProfileGate({ children, redirectIfMissing = false }: Props) {
+export function ProfileGate({ children, startOnDecode = false }: Props) {
   const { data: profile, isPending, isError, refetch } = useProfile();
-  const skipped = useOnboarding((s) => s.skipped);
+  const tier = useAgeStore((s) => s.tier);
+  const launchHandled = useLaunch((s) => s.handled);
+  const markHandled = useLaunch((s) => s.markHandled);
+
+  // True once, right after the profile lookup finishes at app start.
+  const startingUp = startOnDecode && !isPending && !launchHandled;
+
+  useEffect(() => {
+    if (!startingUp) return;
+    markHandled();
+    if (!profile) router.navigate("/decode");
+  }, [startingUp, profile, markHandled]);
+
+  // Teens have no profile and no Home or Planner. Everyone else sees the lock card or the content.
+  if (tier === "teen") return <Redirect href="/decode" />;
 
   if (isPending) return <View className="flex-1 bg-canvas" />;
 
@@ -40,7 +55,8 @@ export function ProfileGate({ children, redirectIfMissing = false }: Props) {
 
   if (profile) return <>{children(profile)}</>;
 
-  if (redirectIfMissing && !skipped) return <Redirect href="/onboarding" />;
+  // At app start with no profile we are about to move to Decode. Show nothing meanwhile.
+  if (startingUp) return <View className="flex-1 bg-canvas" />;
 
   return (
     <Screen>

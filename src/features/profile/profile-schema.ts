@@ -1,11 +1,11 @@
 import { z } from "zod";
 
 import type {
-    ActivityLevel,
-    DailyGoals,
-    Sex,
-    UserProfile,
-    WeightGoal,
+  ActivityLevel,
+  DailyGoals,
+  Sex,
+  UserProfile,
+  WeightGoal,
 } from "@/types";
 import type { ProfileInput } from "./profile-repository";
 
@@ -109,7 +109,7 @@ export const personalSchema = z.object({
   birthYear: numberField(
     "your birth year",
     thisYear - 100,
-    thisYear - 13,
+    thisYear - 18,
     true,
   ),
   heightCm: numberField("your height", 100, 250),

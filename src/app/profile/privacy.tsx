@@ -1,4 +1,4 @@
-import { router } from "expo-router";
+import { resetTo } from "@/lib/navigation";
 import { Alert, View } from "react-native";
 
 import { AppText } from "@/components/ui/app-text";
@@ -22,7 +22,7 @@ export default function PrivacyAndSecurity() {
           style: "destructive",
           onPress: () =>
             deleteAll.mutate(undefined, {
-              onSuccess: () => router.replace("/"),
+              onSuccess: () => resetTo("/decode"),
               onError: () =>
                 Alert.alert("Couldn't delete your data", "Please try again."),
             }),
