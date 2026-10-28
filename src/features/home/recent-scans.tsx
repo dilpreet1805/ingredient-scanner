@@ -73,7 +73,7 @@ function ScanRow(props: {
             title="Open full report"
             variant="soft"
             onPress={() =>
-              router.push({ pathname: "/decode/[id]", params: { id: scan.id } })
+              router.push({ pathname: "/scan/[id]", params: { id: scan.id } })
             }
           />
         </Animated.View>

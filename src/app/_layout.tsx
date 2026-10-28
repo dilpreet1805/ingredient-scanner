@@ -59,6 +59,7 @@ export default function RootLayout() {
         >
           <Stack.Protected guard={notBlocked}>
             <Stack.Screen name="(tabs)" />
+            <Stack.Screen name="scan/[id]" />
           </Stack.Protected>
 
           {/* Profiles: for people who have not entered a date yet, and for adults. Never for teens. */}

@@ -64,10 +64,10 @@ describe("the additive table", () => {
     ...entry.awareness,
   ];
 
-  it("covers the 14 codes we have sourced, each once", () => {
+  it("covers the 17 codes we have sourced, each once", () => {
     const codes = ADDITIVES.map((entry) => entry.code).sort();
     expect(codes).toEqual(
-      ["1422", "1442", "1450", "160c(i)", "122", "202", "211", "260", "319", "330", "385", "415", "551", "635"].sort(),
+      ["1201", "1422", "1442", "1450", "160c(i)", "122", "202", "211", "260", "319", "330", "385", "415", "460(i)", "551", "553(iii)", "635"].sort(),
     );
     expect(new Set(codes).size).toBe(codes.length);
   });

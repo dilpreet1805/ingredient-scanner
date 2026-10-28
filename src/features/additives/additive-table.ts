@@ -34,11 +34,11 @@ export type AdditiveEntry = {
 
 const CHECKED = "2026-10-28";
 
-function jecfa(title: string, url: string): Source {
-  return { title: `WHO JECFA: ${title}`, url, checkedOn: CHECKED };
+function jecfa(title: string, url: string, checkedOn = CHECKED): Source {
+  return { title: `WHO JECFA: ${title}`, url, checkedOn };
 }
-function efsa(title: string, url: string): Source {
-  return { title: `EFSA: ${title}`, url, checkedOn: CHECKED };
+function efsa(title: string, url: string, checkedOn = CHECKED): Source {
+  return { title: `EFSA: ${title}`, url, checkedOn };
 }
 
 const JECFA_DB = "https://apps.who.int/food-additives-contaminants-jecfa-database";
@@ -313,6 +313,67 @@ export const ADDITIVES: AdditiveEntry[] = [
       {
         text: "In the EU, food containing carmoisine (E122) must carry the warning that it \"may have an adverse effect on activity and attention in children\". India's list above does not say this.",
         sources: [EU_COLOUR_WARNING],
+      },
+    ],
+    awareness: [],
+  },
+  {
+    code: "460(i)",
+    name: "Microcrystalline cellulose",
+    group: "Stabiliser and emulsifier",
+    purpose: {
+      text: "Used as an anticaking agent, an emulsifier and a stabiliser.",
+      sources: [jecfa("microcrystalline cellulose", `${JECFA_DB}/Home/Chemical/281`)],
+    },
+    rules: [
+      {
+        text: "JECFA's acceptable daily intake is \"not specified\" (evaluated 1997).",
+        sources: [jecfa("microcrystalline cellulose", `${JECFA_DB}/Home/Chemical/281`)],
+      },
+      {
+        text: "In its 2018 re-evaluation of celluloses (E 460 to E 469), EFSA found no need for a numerical acceptable daily intake, and no safety concern at the reported uses and use levels.",
+        sources: [efsa("re-evaluation of celluloses E 460 to E 469", "https://efsa.europa.eu/en/efsajournal/pub/5047")],
+      },
+    ],
+    awareness: [],
+  },
+  {
+    code: "553(iii)",
+    name: "Talc",
+    group: "Anticaking agent",
+    purpose: {
+      text: "Used as an anticaking agent. JECFA also lists it as a coating agent, a filtering aid and a surface-finishing agent.",
+      sources: [jecfa("talc", "https://inchem.org/documents/jecfa/jeceval/jec_2221.htm")],
+    },
+    rules: [
+      {
+        text: "JECFA's acceptable daily intake is \"not specified\" (evaluated 1986).",
+        sources: [jecfa("talc", "https://inchem.org/documents/jecfa/jeceval/jec_2221.htm")],
+      },
+    ],
+    awareness: [
+      {
+        text: "In its 2018 re-evaluation of silicates, EFSA (which calls talc E 553b) concluded that the safety of talc as a food additive \"cannot be assessed\", because reliable long-term toxicity, cancer and reproductive data were missing. It also noted that absorption was very low and that there was no indication of genotoxicity or developmental toxicity.",
+        sources: [efsa("re-evaluation of calcium silicate, magnesium silicates and talc (E 552, E 553a, E 553b)", "https://efsa.europa.eu/en/efsajournal/pub/5375")],
+      },
+    ],
+  },
+  {
+    code: "1201",
+    name: "Polyvinylpyrrolidone (PVP)",
+    group: "Stabiliser and bodying agent",
+    purpose: {
+      text: "Used as a bodying agent, a stabiliser, a clarifying agent, a dispersing agent and an aid in making tablets.",
+      sources: [jecfa("polyvinylpyrrolidone", "https://inchem.org/documents/jecfa/jeceval/jec_1957.htm")],
+    },
+    rules: [
+      {
+        text: "JECFA's acceptable daily intake is 0 to 50 mg per kg of body weight (1986).",
+        sources: [jecfa("polyvinylpyrrolidone", "https://inchem.org/documents/jecfa/jeceval/jec_1957.htm")],
+      },
+      {
+        text: "In its 2020 re-evaluation, EFSA found no need for a numerical acceptable daily intake for polyvinylpyrrolidone (E 1201) and no safety concern at the reported uses and use levels.",
+        sources: [efsa("re-evaluation of polyvinylpyrrolidone (E 1201) and polyvinylpolypyrrolidone (E 1202)", "https://doi.org/10.2903/j.efsa.2020.6215")],
       },
     ],
     awareness: [],

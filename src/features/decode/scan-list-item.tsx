@@ -28,7 +28,7 @@ export function ScanListItem({
     <Pressable
       accessibilityRole="button"
       onPress={() =>
-        router.push({ pathname: "/decode/[id]", params: { id: scan.id } })
+        router.push({ pathname: "/scan/[id]", params: { id: scan.id } })
       }
       className={cn(
         "gap-2 py-3 active:opacity-70",

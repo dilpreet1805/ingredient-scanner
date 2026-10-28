@@ -121,8 +121,10 @@ export function DecodeReview() {
     try {
       const id = await createScan.mutateAsync(scan);
       reset();
-      // replace, so Back from the report goes to Decode, not to this screen.
-      router.replace({ pathname: "/decode/[id]", params: { id } });
+      // Close this screen, then open the report over the tabs, so Back goes to Decode.
+      // (replace would act on the root stack here and remove the tabs.)
+      router.dismissTo("/decode");
+      router.push({ pathname: "/scan/[id]", params: { id } });
     } catch (error) {
       console.error(error);
       setSaveError("We couldn't save this scan. Please try again.");
