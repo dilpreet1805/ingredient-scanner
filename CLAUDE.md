@@ -36,6 +36,7 @@ Also: Planner (meals), profile, BMI. Later: barcode scan with a shared product d
 - Additive accordion (`additive-list.tsx`): one row open at a time (`openCode`). Opening a row scrolls it to the top
   through `useScreenScroll()`, the ScrollView ref that `Screen` shares by context (null outside a `Screen`).
   Ref types in RN 0.88: `ScrollViewInstance` and `HostInstance`, not `ScrollView` or `View`.
+- Codes with entries: see `ADDITIVES` in `additive-table.ts` (one source of truth).
 
 ## Backend (Supabase Edge Function `decode-label`, Deno)
 - Uses Claude Haiku 5.5. Anonymous sign-in, daily decode limit.
@@ -57,9 +58,11 @@ Also: Planner (meals), profile, BMI. Later: barcode scan with a shared product d
 
 ## Known open items
 - Additive table: verify India (FSSAI) lines against current rules (uses the 2011 Appendix A); add more codes
-  (e.g. 172(i), 132, 127, 104, 133, 171, 1202, 1518, 1521, 553(iii), 460(i), 468, 462, 464, 470(ii), 470(iii), 1201);
+  (e.g. 172(i), 132, 127, 104, 133, 171, 1202, 1518, 1521, 468, 462, 464, 470(ii), 470(iii));
   add a glossary for "not specified" / ADI from a WHO source.
 - Next big step 6.8: barcode scan (EAN-13 check digit) + shared products table (a product is served to others only after
   2 independent user confirmations; barcode is the key; no photos or identities shared; RLS with no policies).
-- Later: vitamins/minerals for supplements, a golden set of 25-30 label photos, privacy text update (photos go to the AI
-  provider), legal review (DPDP, teen mode).
+- Golden set: build a set of 25 to 30 label photos with hand-written correct answers (target 100 over time), keep about
+  20% as a hidden test set, and use it to measure label-reading accuracy. Photos stay out of git.
+- Later: vitamins/minerals for supplements, privacy text update (photos go to the AI provider), legal review (DPDP,
+  teen mode).
