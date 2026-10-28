@@ -1,8 +1,9 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useState } from "react";
-import { Linking, Pressable, View } from "react-native";
+import { useLayoutEffect, useRef, useState } from "react";
+import { Linking, Pressable, View, type HostInstance } from "react-native";
 
 import { AppText } from "@/components/ui/app-text";
+import { useScreenScroll } from "@/components/ui/screen";
 import { colors } from "@/constants/colors";
 import { cn } from "@/lib/cn";
 
@@ -67,6 +68,21 @@ function EntryDetails({ entry }: { entry: AdditiveEntry }) {
 export function AdditiveList({ ingredientsText }: { ingredientsText: string }) {
   const found = describeAdditives(ingredientsText);
   const [openCode, setOpenCode] = useState<string | null>(null);
+  const scrollRef = useScreenScroll();
+  const rowRefs = useRef(new Map<string, HostInstance>());
+
+  // After a row opens (and any other row has closed), scroll it to the top.
+  // useLayoutEffect runs after the new layout exists, so the position is current.
+  useLayoutEffect(() => {
+    if (openCode === null) return;
+    const row = rowRefs.current.get(openCode);
+    const content = scrollRef?.current?.getInnerViewRef();
+    if (!row || !content) return;
+    row.measureLayout(content, (_x, y) => {
+      // Leave the same gap as the Screen's top padding (pt-4 = 16).
+      scrollRef?.current?.scrollTo({ y: Math.max(0, y - 16), animated: true });
+    });
+  }, [openCode, scrollRef]);
 
   return (
     <View className="gap-1">
@@ -85,6 +101,13 @@ export function AdditiveList({ ingredientsText }: { ingredientsText: string }) {
             return (
               <View
                 key={code}
+                ref={(node) => {
+                  if (!node) return;
+                  rowRefs.current.set(code, node);
+                  return () => {
+                    rowRefs.current.delete(code);
+                  };
+                }}
                 className={cn(
                   index < found.length - 1 && "border-b border-primary-soft",
                 )}
