@@ -4,10 +4,11 @@ import { Pressable, View } from "react-native";
 
 import { ProductThumbnail } from "@/components/product-thumbnail";
 import { AppText } from "@/components/ui/app-text";
-import { Badge } from "@/components/ui/badge";
 import { colors } from "@/constants/colors";
 import { cn } from "@/lib/cn";
 import type { ScanResult } from "@/types";
+
+import { additiveLine, scanTitle } from "./scan-text";
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString(undefined, {
@@ -42,7 +43,7 @@ export function ScanListItem({
             className="font-body-semibold text-forest"
             numberOfLines={1}
           >
-            {scan.productName ?? "Unnamed product"}
+            {scanTitle(scan)}
           </AppText>
           <View className="flex-row items-center gap-1">
             {scan.pinned && (
@@ -51,7 +52,6 @@ export function ScanListItem({
             <AppText variant="caption">{formatDate(scan.createdAt)}</AppText>
           </View>
         </View>
-        <Badge level={scan.overallRisk} />
         <Ionicons name="chevron-forward" size={20} color={colors.muted} />
       </View>
 
@@ -60,8 +60,8 @@ export function ScanListItem({
         <View className="h-6 w-6 items-center justify-center rounded-full bg-primary-soft">
           <Ionicons name="leaf-outline" size={14} color={colors.primary} />
         </View>
-        <AppText variant="caption" className="flex-1" numberOfLines={2}>
-          {scan.summary}
+        <AppText variant="caption" className="flex-1" numberOfLines={1}>
+          {additiveLine(scan.ingredientsText)}
         </AppText>
       </View>
     </Pressable>

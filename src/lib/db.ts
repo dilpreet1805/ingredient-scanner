@@ -58,6 +58,27 @@ const migrations: string[] = [
      created_at TEXT NOT NULL
    );
    CREATE INDEX idx_meals_date ON meals (date);`,
+
+  `DROP INDEX IF EXISTS idx_scans_created_at;
+    DROP TABLE IF EXISTS scans;
+    CREATE TABLE scans (
+      id TEXT PRIMARY KEY NOT NULL,
+      created_at TEXT NOT NULL,
+      pinned INTEGER NOT NULL DEFAULT 0,
+      brand TEXT,
+      product_name TEXT,
+      category TEXT NOT NULL,
+      ingredients_text TEXT NOT NULL,
+      allergen_statements TEXT NOT NULL,
+      serving_size TEXT,
+      servings_per_pack REAL,
+      nutrition TEXT,
+      warnings TEXT NOT NULL,
+      barcode TEXT,
+      confirmed INTEGER NOT NULL DEFAULT 0,
+      image_files TEXT NOT NULL
+    );
+    CREATE INDEX idx_scans_created_at ON scans (created_at);`,
 ];
 
 async function migrate(db: SQLite.SQLiteDatabase) {

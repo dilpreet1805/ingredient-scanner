@@ -30,8 +30,10 @@ Rules:
 - polyolG is the "polyol" or "polyols" row.
 - ingredientsText: the ingredient list exactly as printed, without the heading word.
 - allergenStatements: each allergen or "may contain" statement exactly as printed.
-- isFoodLabel is false if the photo does not show a food or drink product label.
-- category: the best match from the allowed list, or "other".`;
+- isFoodLabel is true when the photo shows the label of a packaged food, a drink or a dietary supplement (vitamins, protein powder and similar). It is false for anything else, such as a phone, a person or a room.
+- For a supplement, still read the ingredient list, the allergen statements and the serving size. Add nutrition entries only for nutrients in the allowed list that are printed (for example energy or protein). Ignore vitamins and minerals. Use the category "supplement".
+- Copy the ingredient list word for word, in the order printed. A code in brackets belongs to the group name directly before it, even when a line break falls between them. Never move a code to another group and never change the order. Copy every number exactly as printed, including percentages.
+- A statement such as "Contains permitted natural colour [INS 160c(i)]" is part of the ingredient declaration: add it at the end of ingredientsText. Only allergen statements (contains or may contain milk, soy, nuts, gluten and so on) go in allergenStatements.`;
 
 const USER_PROMPT = "Extract the label information from this photo.";
 

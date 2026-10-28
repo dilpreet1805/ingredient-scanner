@@ -1,3 +1,5 @@
+import type { LabelReading } from "@/features/decode/label-reading";
+
 /** Calories and macros. Reused by scans, meals and daily goals. */
 export type Nutrition = {
   calories: number; // kcal
@@ -6,16 +8,7 @@ export type Nutrition = {
   fatG: number;
 };
 
-export type RiskLevel = "low" | "moderate" | "high";
-
-/** One additive found on a label, e.g. E621. */
-export type Additive = {
-  code: string;
-  name: string;
-  purpose: string;
-  sideEffects: string[]; // empty array if none known
-  riskLevel: RiskLevel;
-};
+export type ScanNutrition = NonNullable<LabelReading["nutrition"]>;
 
 export type ProductCategory =
   | "noodles"
@@ -29,37 +22,34 @@ export type ProductCategory =
   | "frozen"
   | "fruit_veg"
   | "meat_fish"
+  | "spread"
+  | "supplement"
   | "other";
 
-export type ScanResult = {
+export interface ScanResult {
   id: string;
-  createdAt: string; // ISO date string
-  imageUri: string | null;
+  createdAt: string;
+  pinned: boolean;
+  brand: string | null;
   productName: string | null;
   category: ProductCategory;
-  ingredients: string[];
-  benefits: string[];
-  concerns: string[];
-  additives: Additive[];
-  overallRisk: RiskLevel;
-  pinned: boolean;
-  summary: string;
-  nutritionPer100g: Nutrition | null;
-  nutritionImageUri: string | null;
-};
+  ingredientsText: string;
+  allergenStatements: string[];
+  servingSize: string | null;
+  servingsPerPack: number | null;
+  nutrition: ScanNutrition | null;
+  warnings: string[];
+  barcode: string | null;
+  confirmed: boolean;
+  imageUris: string[];
+}
 
-export type ScanAnalysis = Pick<
+export type NewScan = Omit<
   ScanResult,
-  | "productName"
-  | "category"
-  | "summary"
-  | "overallRisk"
-  | "ingredients"
-  | "benefits"
-  | "concerns"
-  | "additives"
-  | "nutritionPer100g"
->;
+  "id" | "createdAt" | "pinned" | "imageUris"
+> & {
+  photoUris: string[];
+};
 
 export type MealBasis = "serving" | "per100g";
 export type MealSource = "manual" | "scan" | "photo";

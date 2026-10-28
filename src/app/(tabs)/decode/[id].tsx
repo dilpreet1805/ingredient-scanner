@@ -5,21 +5,15 @@ import { Image, Pressable, View } from "react-native";
 import { ProductThumbnail } from "@/components/product-thumbnail";
 import { AppText } from "@/components/ui/app-text";
 import { BackButton } from "@/components/ui/back-button";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Screen } from "@/components/ui/screen";
 import { colors } from "@/constants/colors";
+import { NutritionCard } from "@/features/decode/nutrition-card";
 import { ScanDetails } from "@/features/decode/scan-details";
+import { scanTitle } from "@/features/decode/scan-text";
 import { useScan, useSetPinned } from "@/features/decode/use-scans";
-import type { RiskLevel } from "@/types";
-
-// Placeholder wording. Final copy needs care, because this is health-related.
-const verdictTitle: Record<RiskLevel, string> = {
-  low: "Looks like a good pick",
-  moderate: "Fine in moderation",
-  high: "Best as an occasional treat",
-};
+import { warningText } from "@/features/decode/warning-text";
 
 export default function ScanResultScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -70,12 +64,12 @@ export default function ScanResultScreen() {
         </Card>
       ) : (
         <>
-          <Card className="gap-4">
+          <Card className="gap-3">
             <View className="flex-row items-center gap-3">
               <ProductThumbnail category={scan.category} />
               <View className="flex-1">
-                <AppText variant="title" numberOfLines={2}>
-                  {scan.productName ?? "Unnamed product"}
+                <AppText variant="title" numberOfLines={3}>
+                  {scanTitle(scan)}
                 </AppText>
                 <AppText variant="caption">
                   {new Date(scan.createdAt).toLocaleDateString(undefined, {
@@ -86,94 +80,87 @@ export default function ScanResultScreen() {
                 </AppText>
               </View>
             </View>
-
-            <View className="gap-2 rounded-control bg-canvas p-4">
-              <Badge level={scan.overallRisk} />
-              <AppText variant="title">
-                {verdictTitle[scan.overallRisk]}
-              </AppText>
-              <AppText variant="caption">{scan.summary}</AppText>
-            </View>
+            <AppText variant="caption">
+              {scan.confirmed
+                ? "You confirmed this matches the pack."
+                : "Not confirmed against the pack."}
+            </AppText>
           </Card>
 
           <Card>
             <ScanDetails scan={scan} />
           </Card>
 
-          <Card className="gap-3">
-            <AppText variant="title">Nutrition per 100 g</AppText>
-            {scan.nutritionPer100g ? (
-              <View className="gap-2">
-                {(
-                  [
-                    ["Calories", `${scan.nutritionPer100g.calories} kcal`],
-                    ["Carbs", `${scan.nutritionPer100g.carbsG} g`],
-                    ["Protein", `${scan.nutritionPer100g.proteinG} g`],
-                    ["Fat", `${scan.nutritionPer100g.fatG} g`],
-                  ] as const
-                ).map(([label, value]) => (
-                  <View
-                    key={label}
-                    className="flex-row items-center justify-between border-b border-primary-soft pb-2"
-                  >
-                    <AppText variant="body">{label}</AppText>
-                    <AppText
-                      variant="body"
-                      className="font-body-bold text-forest"
-                    >
-                      {value}
-                    </AppText>
-                  </View>
-                ))}
-                <AppText variant="caption">
-                  Values come from the label. This doesn't count as eating it.
-                  Log meals in the Planner.
-                </AppText>
-              </View>
-            ) : (
+          {scan.nutrition ? (
+            <NutritionCard
+              nutrition={scan.nutrition}
+              servingSize={scan.servingSize}
+              note="Values come from the label. This doesn't count as eating it. Log meals in the Planner."
+            />
+          ) : (
+            <Card className="gap-2">
+              <AppText variant="title">Nutrition</AppText>
               <AppText variant="caption">
-                No nutrition photo was added for this scan. Add one next time to
-                see calories and macros.
+                {scan.category === "supplement"
+                  ? "Vitamins and minerals aren't read yet."
+                  : "No nutrition facts were read for this scan. Add a photo of them next time to see calories and macros."}
               </AppText>
-            )}
-          </Card>
-
-          {scan.imageUri && (
-            <Card className="gap-3">
-              <AppText variant="title">Your label photo</AppText>
-              <Image
-                source={{ uri: scan.imageUri }}
-                resizeMode="contain"
-                accessibilityLabel="Your label photo"
-                style={{
-                  width: "100%",
-                  height: 200,
-                  borderRadius: 16,
-                  backgroundColor: colors.primarySoft,
-                }}
-              />
             </Card>
           )}
 
-          <Card className="gap-3">
-            <AppText variant="title">Ingredients</AppText>
-            <View className="flex-row flex-wrap gap-2">
-              {scan.ingredients.map((item) => (
-                <View
-                  key={item}
-                  className="rounded-full bg-primary-soft px-3 py-1"
-                >
-                  <AppText variant="caption" className="text-ink">
-                    {item}
-                  </AppText>
-                </View>
+          {scan.warnings.length > 0 && (
+            <Card className="gap-2 bg-accent-soft">
+              {scan.warnings.map((code) => (
+                <AppText key={code} variant="caption" className="text-ink">
+                  {warningText(code)}
+                </AppText>
               ))}
-            </View>
+            </Card>
+          )}
+
+          {scan.allergenStatements.length > 0 && (
+            <Card className="gap-2">
+              <AppText variant="title">Allergen information</AppText>
+              {scan.allergenStatements.map((line) => (
+                <AppText key={line} variant="body">
+                  {line}
+                </AppText>
+              ))}
+            </Card>
+          )}
+
+          <Card className="gap-2">
+            <AppText variant="title">Ingredients</AppText>
+            <AppText variant="body">{scan.ingredientsText}</AppText>
           </Card>
 
+          {scan.imageUris.length > 0 && (
+            <Card className="gap-3">
+              <AppText variant="title">
+                {scan.imageUris.length > 1
+                  ? "Your label photos"
+                  : "Your label photo"}
+              </AppText>
+              {scan.imageUris.map((uri) => (
+                <Image
+                  key={uri}
+                  source={{ uri }}
+                  resizeMode="contain"
+                  accessibilityLabel="Your label photo"
+                  style={{
+                    width: "100%",
+                    height: 200,
+                    borderRadius: 16,
+                    backgroundColor: colors.primarySoft,
+                  }}
+                />
+              ))}
+            </Card>
+          )}
+
           <AppText variant="caption" className="px-1">
-            General information based on the label, not medical advice. Talk to
-            a doctor or dietitian about your own needs.
+            General information based on the label and published sources, not
+            medical advice. Talk to a doctor or dietitian about your own needs.
           </AppText>
         </>
       )}

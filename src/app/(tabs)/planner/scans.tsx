@@ -11,6 +11,8 @@ import { Card } from "@/components/ui/card";
 import { Screen } from "@/components/ui/screen";
 import { TextField } from "@/components/ui/text-field";
 import { colors } from "@/constants/colors";
+import { mealReadyFrom } from "@/features/decode/scan-nutrition";
+import { scanTitle } from "@/features/decode/scan-text";
 import { useScans } from "@/features/decode/use-scans";
 import { toNumber } from "@/features/planner/meal-schema";
 import { MealTypePicker } from "@/features/planner/meal-type-picker";
@@ -22,6 +24,13 @@ import { formatDayLabel, toDateKey } from "@/lib/dates";
 import { itemTotals } from "@/lib/meal-math";
 import type { MealType } from "@/types";
 
+/** Why a scan can't be added, in plain words. Null when it can be. */
+function blockedReason(panelBasis: string | undefined, hasPanel: boolean) {
+  if (!hasPanel) return "No nutrition facts were read, can't add";
+  if (panelBasis === "per100ml") return "Per 100 ml only, can't add yet";
+  return "Nutrition facts are incomplete, can't add";
+}
+
 export default function FromMyScans() {
   const { type: typeParam } = useLocalSearchParams<{ type?: string }>();
   const date = usePlannerDate((s) => s.date);
@@ -30,7 +39,7 @@ export default function FromMyScans() {
 
   const [query, setQuery] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [grams, setGrams] = useState("100");
+  const [amountText, setAmountText] = useState("");
   const [type, setType] = useState<MealType>(
     isMealType(typeParam) ? typeParam : defaultMealType(),
   );
@@ -38,24 +47,45 @@ export default function FromMyScans() {
 
   const needle = query.trim().toLowerCase();
   const visible = scans.filter((scan) =>
-    (scan.productName ?? "").toLowerCase().includes(needle),
+    scanTitle(scan).toLowerCase().includes(needle),
   );
   const selected = scans.find((scan) => scan.id === selectedId) ?? null;
+  const ready = selected ? mealReadyFrom(selected.nutrition) : null;
   const dayLabel = formatDayLabel(date, toDateKey(new Date())).toLowerCase();
 
+  // Weight for per-100 g products, number of servings for per-serving ones.
+  const byWeight = ready?.basis === "per100g";
+  const range = byWeight
+    ? { min: 1, max: 5000, unit: "g" }
+    : { min: 0.1, max: 50, unit: "servings" };
+
+  const quantity = toNumber(amountText);
+  const quantityOk =
+    Number.isFinite(quantity) && quantity >= range.min && quantity <= range.max;
+
   const preview =
-    selected?.nutritionPer100g &&
-    itemTotals({
-      basis: "per100g",
-      quantity: toNumber(grams),
-      nutrition: selected.nutritionPer100g,
-    });
+    ready && quantityOk
+      ? itemTotals({
+          basis: ready.basis,
+          quantity,
+          nutrition: ready.nutrition,
+        })
+      : null;
+
+  const choose = (scanId: string, basis: string) => {
+    setSelectedId(scanId);
+    setAmountText(basis === "per100g" ? "100" : "1");
+    setError(null);
+  };
 
   const add = async () => {
-    if (!selected?.nutritionPer100g) return;
-    const amount = toNumber(grams);
-    if (amount <= 0 || amount > 5000) {
-      setError("Enter an amount between 1 and 5000 g.");
+    if (!selected || !ready) return;
+    if (!quantityOk) {
+      setError(
+        byWeight
+          ? "Enter an amount between 1 and 5000 g."
+          : "Enter between 0.1 and 50 servings.",
+      );
       return;
     }
     setError(null);
@@ -63,10 +93,10 @@ export default function FromMyScans() {
       await addMeal.mutateAsync({
         date,
         type,
-        name: selected.productName ?? "Scanned product",
-        basis: "per100g",
-        quantity: amount,
-        nutrition: selected.nutritionPer100g,
+        name: scanTitle(selected),
+        basis: ready.basis,
+        quantity,
+        nutrition: ready.nutrition,
         source: "scan",
         scanId: selected.id,
         category: selected.category,
@@ -99,9 +129,7 @@ export default function FromMyScans() {
       {scans.length === 0 ? (
         <Card className="gap-3">
           <AppText variant="title">No scanned products yet</AppText>
-          <AppText variant="caption">
-            Decode a product and add a nutrition photo to see it here.
-          </AppText>
+          <AppText variant="caption">Decode a product to see it here.</AppText>
           <Button
             title="Go to Decode"
             variant="soft"
@@ -114,26 +142,21 @@ export default function FromMyScans() {
             <AppText variant="caption">No products match your search.</AppText>
           )}
           {visible.map((scan, index) => {
-            const hasData = scan.nutritionPer100g !== null;
+            const rowReady = mealReadyFrom(scan.nutrition);
+            const usable = rowReady !== null;
             const isSelected = scan.id === selectedId;
             return (
               <Pressable
                 key={scan.id}
-                disabled={!hasData}
+                disabled={!rowReady}
                 accessibilityRole="button"
-                accessibilityState={{
-                  selected: isSelected,
-                  disabled: !hasData,
-                }}
-                onPress={() => {
-                  setSelectedId(scan.id);
-                  setError(null);
-                }}
+                accessibilityState={{ selected: isSelected, disabled: !usable }}
+                onPress={() => rowReady && choose(scan.id, rowReady.basis)}
                 className={cn(
                   "flex-row items-center gap-3 rounded-control px-2 py-3",
                   index < visible.length - 1 && "border-b border-primary-soft",
                   isSelected && "bg-primary-soft",
-                  !hasData && "opacity-50",
+                  !usable && "opacity-50",
                 )}
               >
                 <ProductThumbnail category={scan.category} />
@@ -143,12 +166,15 @@ export default function FromMyScans() {
                     className="font-body-semibold"
                     numberOfLines={1}
                   >
-                    {scan.productName ?? "Unnamed product"}
+                    {scanTitle(scan)}
                   </AppText>
                   <AppText variant="caption">
-                    {scan.nutritionPer100g
-                      ? `Per 100 g: ${Math.round(scan.nutritionPer100g.calories)} kcal`
-                      : "No nutrition photo, can't add by weight"}
+                    {rowReady
+                      ? `${rowReady.basis === "per100g" ? "Per 100 g" : "Per serving"}: ${Math.round(rowReady.nutrition.calories)} kcal`
+                      : blockedReason(
+                          scan.nutrition?.basis,
+                          scan.nutrition !== null,
+                        )}
                   </AppText>
                 </View>
                 {isSelected ? (
@@ -158,7 +184,7 @@ export default function FromMyScans() {
                     color={colors.primary}
                   />
                 ) : (
-                  hasData && (
+                  usable && (
                     <Ionicons
                       name="chevron-forward"
                       size={18}
@@ -172,15 +198,20 @@ export default function FromMyScans() {
         </Card>
       )}
 
-      {selected?.nutritionPer100g && (
+      {selected && ready && (
         <Card className="gap-4">
           <AppText variant="title" numberOfLines={1}>
-            {selected.productName ?? "Scanned product"}
+            {scanTitle(selected)}
           </AppText>
+          {!byWeight && selected.servingSize && (
+            <AppText variant="caption">
+              One serving: {selected.servingSize}
+            </AppText>
+          )}
           <TextField
-            label="Amount you ate (g)"
-            value={grams}
-            onChangeText={setGrams}
+            label={byWeight ? "Amount you ate (g)" : "Servings you ate"}
+            value={amountText}
+            onChangeText={setAmountText}
             keyboardType="decimal-pad"
             error={error ?? undefined}
           />

@@ -1,11 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import type { ScanAnalysis } from "@/types";
+import type { NewScan } from "@/types";
 import {
-    createScan,
-    getScan,
-    listVisibleScans,
-    setPinned,
+  createScan,
+  getScan,
+  listVisibleScans,
+  setPinned,
 } from "./scan-repository";
 
 const scansKey = ["scans"] as const;
@@ -25,10 +25,7 @@ export function useScan(id: string | undefined) {
 export function useCreateScan() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (args: {
-      analysis: ScanAnalysis;
-      photos: { ingredientsUri: string; nutritionUri: string | null };
-    }) => createScan(args.analysis, args.photos),
+    mutationFn: (scan: NewScan) => createScan(scan),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: scansKey }),
   });
 }

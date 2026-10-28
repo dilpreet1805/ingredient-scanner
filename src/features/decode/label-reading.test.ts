@@ -62,7 +62,9 @@ describe("label reading", () => {
 
   it("maps unknown categories to other", () => {
     expect(toProductCategory("noodles")).toBe("noodles");
-    expect(toProductCategory("spread")).toBe("other");
+    expect(toProductCategory("spread")).toBe("spread");
+    expect(toProductCategory("supplement")).toBe("supplement");
+    expect(toProductCategory("some_new_category")).toBe("other");
     expect(toProductCategory("constructor")).toBe("other");
     expect(toProductCategory("")).toBe("other");
   });

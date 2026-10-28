@@ -14,6 +14,7 @@ export const CATEGORIES = [
   "fruit_veg",
   "meat_fish",
   "spread",
+  "supplement",
   "other",
 ] as const;
 

@@ -22,6 +22,8 @@ const categoryStyle: Record<
   frozen: { icon: "snowflake", tone: "primary" },
   fruit_veg: { icon: "food-apple", tone: "primary" },
   meat_fish: { icon: "food-steak", tone: "accent" },
+  spread: { icon: "bowl-mix", tone: "accent" },
+  supplement: { icon: "pill", tone: "primary" },
   other: { icon: "food", tone: "primary" },
 };
 

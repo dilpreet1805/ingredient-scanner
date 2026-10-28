@@ -54,6 +54,8 @@ const KNOWN_CATEGORIES: Record<ProductCategory, true> = {
   frozen: true,
   fruit_veg: true,
   meat_fish: true,
+  spread: true,
+  supplement: true,
   other: true,
 };
 
