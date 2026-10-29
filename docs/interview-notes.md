@@ -37,3 +37,10 @@
 - **Platform differences:** iPhone reports a UPC-A as EAN-13 with a leading 0, Android as 12 digits; without normalization the same product would get two database entries.
 - **Don't infer type from length:** UPC-E and EAN-8 both have 8 digits but mean different things, so we use the scanner's format name.
 - **`switch` vs lookup object:** a plain object lookup can find built-in keys like `toString`; a `switch` has no hidden keys.
+
+### Shareable barcodes (6.8 step 3)
+- **Restricted circulation numbers:** barcodes shops or companies use internally (weighed deli items, coupons, refund receipts); not unique worldwide, so never shared.
+- **Blocklist vs allowlist:** a blocklist names what is forbidden (small, matches the GS1 rules); an allowlist names what is allowed (safer against new special ranges, but must track every country prefix).
+- **Fail closed:** when input is invalid or unclear, answer "not allowed"; the safe default for anything shared.
+- **Test helper for valid data:** `key()` adds the check digit, so each test fails only for the rule it tests.
+- **Source caveat:** the prefix rules were checked against the GS1 prefix page and the GSCN 23-006 extract (sections 2.1.11 and 2.1.11.1), not the full General Specifications; re-check before sharing goes live. A secondary source said "40-49 is internal", which is wrong (400-440 is GS1 Germany), so primary sources matter.

@@ -64,8 +64,12 @@ Also: Planner (meals), profile, BMI. Later: barcode scan with a shared product d
 - Next big step 6.8: barcode scan (EAN-13 check digit) + shared products table (a product is served to others only after
   2 independent user confirmations; barcode is the key; no photos or identities shared; RLS with no policies).
   Product key = GTIN-13 from `toGtin13(format, code)` in `src/features/barcode/gtin.ts`: EAN-13 as is, UPC-A + one
-  leading 0, EAN-8 + five leading 0s, so iPhone and Android give the same key. UPC-E not accepted yet. Check before
-  step (b): EAN-13 prefixes 20-29 are believed to be store-internal and should not enter the shared table.
+  leading 0, EAN-8 + five leading 0s, so iPhone and Android give the same key. UPC-E not accepted yet.
+  Shared only if `isShareableGtin13(key)` (`src/features/barcode/shareable.ts`) is true: blocks store-internal, coupon
+  and refund prefixes (checked against the GS1 prefix page and GSCN 23-006 sections 2.1.11/2.1.11.1, not the full
+  General Specifications).
+  BLOCKER: sharing stays OFF until (1) legal review is done and (2) the golden set exists, label-reading agreement has
+  been measured, and a target agreement rate has been chosen together.
 - Golden set: build a set of 25 to 30 label photos with hand-written correct answers (target 100 over time), keep about
   20% as a hidden test set, and use it to measure label-reading accuracy. Photos stay out of git.
 - Future: decode as a paid API for other apps (customer API keys, per-plan quotas, usage metering,
