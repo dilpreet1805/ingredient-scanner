@@ -63,8 +63,9 @@ Also: Planner (meals), profile, BMI. Later: barcode scan with a shared product d
   add a glossary for "not specified" / ADI from a WHO source.
 - Next big step 6.8: barcode scan (EAN-13 check digit) + shared products table (a product is served to others only after
   2 independent user confirmations; barcode is the key; no photos or identities shared; RLS with no policies).
-  EAN-13 only so far; EAN-8 and 12-digit UPC-A (an EAN-13 with a leading 0) are not accepted yet, so the camera step
-  must decide how to handle them.
+  Product key = GTIN-13 from `toGtin13(format, code)` in `src/features/barcode/gtin.ts`: EAN-13 as is, UPC-A + one
+  leading 0, EAN-8 + five leading 0s, so iPhone and Android give the same key. UPC-E not accepted yet. Check before
+  step (b): EAN-13 prefixes 20-29 are believed to be store-internal and should not enter the shared table.
 - Golden set: build a set of 25 to 30 label photos with hand-written correct answers (target 100 over time), keep about
   20% as a hidden test set, and use it to measure label-reading accuracy. Photos stay out of git.
 - Future: decode as a paid API for other apps (customer API keys, per-plan quotas, usage metering,

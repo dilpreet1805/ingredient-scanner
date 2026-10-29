@@ -30,3 +30,10 @@
 - **ID as string, not number:** a barcode is an identifier, not an amount; a `number` would drop leading zeros, and you never do maths on the whole thing.
 - **Strict pure function:** exactly 13 digits, no trimming; cleaning up input is the caller's job. No imports, so the same code can run in the Deno server later.
 - **Validate on the server too:** never trust the client; the server checks the barcode again before any shared-database write.
+
+### Barcode formats (6.8 step 2)
+- **GTIN family:** EAN-13, UPC-A (12), EAN-8 are all GTINs; adding zeros on the left keeps the same product and a valid check digit.
+- **Normalization:** turning different forms of the same thing into one standard form before storing it, so one product = one key (here: GTIN-13).
+- **Platform differences:** iPhone reports a UPC-A as EAN-13 with a leading 0, Android as 12 digits; without normalization the same product would get two database entries.
+- **Don't infer type from length:** UPC-E and EAN-8 both have 8 digits but mean different things, so we use the scanner's format name.
+- **`switch` vs lookup object:** a plain object lookup can find built-in keys like `toString`; a `switch` has no hidden keys.
