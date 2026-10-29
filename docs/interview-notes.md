@@ -22,3 +22,11 @@
 
 ### Git on Windows
 - **Line endings (LF vs CRLF, `core.autocrlf`):** Unix ends lines with LF, Windows with CRLF; with `core.autocrlf=true` Git stores LF in the repo and gives you CRLF in your working folder (a `.gitattributes` file can fix this per repo for everyone).
+
+### Barcode (6.8 step 1)
+- **EAN-13 / GTIN-13 / GS1:** the 13-digit number under most retail barcodes; GS1 hands the numbers out, and the first 3 digits (GS1 prefix, e.g. 890 for India) show which GS1 office registered it, not where the product was made.
+- **Check digit:** the last digit, calculated from the first 12: multiply by 1, 3, 1, 3… from the left, add up, then `(10 − sum mod 10) mod 10`. The outer `mod 10` turns 10 into 0.
+- **What it catches vs misses:** catches every single wrong digit; misses swapping neighbouring digits that differ by 5 (the sum changes by exactly 10). A test documents this limit.
+- **ID as string, not number:** a barcode is an identifier, not an amount; a `number` would drop leading zeros, and you never do maths on the whole thing.
+- **Strict pure function:** exactly 13 digits, no trimming; cleaning up input is the caller's job. No imports, so the same code can run in the Deno server later.
+- **Validate on the server too:** never trust the client; the server checks the barcode again before any shared-database write.
