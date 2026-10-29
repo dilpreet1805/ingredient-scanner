@@ -54,3 +54,13 @@
 - **Consent before collection:** the user turns on "Share label readings" before the photo is sent, because the reading is saved during the decode; we never store data first and ask later.
 - **Retention matched to purpose:** keep data only as long as it's needed; confirmations are deleted after 180 days because the serving rule only counts the last 180 days.
 - **Partial staging (`git apply --cached`):** stages only part of a file's changes by applying a patch to the index without touching the working file; useful when one file's edits belong in two commits and `git add -p` isn't available.
+
+### Shared products migration (6.8 design, round 3)
+- **Lost update:** two transactions both read a count of 1 and both write 2, so one update disappears; we avoid it by never storing counts and always counting rows.
+- **Read committed (Postgres default):** each statement sees only data committed before it started; a later statement in the same function can see commits that happened in between.
+- **Row lock (`select ... for update`):** locks one row until the transaction ends; locking the barcode's `products` row makes a second submission for that barcode wait, then see the first one.
+- **`security definer` and `set search_path = ''`:** the function runs with its owner's rights, not the caller's; an empty search path forces full names (`public.x`), so nobody can slip in a look-alike table or function.
+- **Two layers of protection:** revoked table rights decide whether a role can touch a table at all; RLS with no policies decides which rows it sees (none). If one layer is undone by mistake, the other still blocks.
+- **Fail closed (here):** no `user_age_tiers` row means the user can't contribute; unknown is treated as "no".
+- **Single source of truth:** one place holds each fact and everything else points to it (here: the served version is worked out from the confirmation rows, not copied into a column that can go stale).
+- **Binding a reading to its barcode:** tie a stored reading to the barcode when it is created, so it can't be reused for another product.
