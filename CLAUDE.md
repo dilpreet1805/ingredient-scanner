@@ -70,6 +70,8 @@ Also: Planner (meals), profile, BMI. Later: barcode scan with a shared product d
   General Specifications).
   BLOCKER: sharing stays OFF until (1) legal review is done and (2) the golden set exists, label-reading agreement has
   been measured, and a target agreement rate has been chosen together.
+  Full agreed design (tables, functions, consent, serving rules, decision log, open items):
+  `docs/shared-products-design.md`.
 - Golden set: build a set of 25 to 30 label photos with hand-written correct answers (target 100 over time), keep about
   20% as a hidden test set, and use it to measure label-reading accuracy. Photos stay out of git.
 - Future: decode as a paid API for other apps (customer API keys, per-plan quotas, usage metering,
