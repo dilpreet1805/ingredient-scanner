@@ -10,7 +10,8 @@ Claude and preparing for interviews, so TEACHING MATTERS AS MUCH AS THE CODE.
 - Ask before edits and commands (do not auto-approve). Show each change.
 - After a step, give me ONE check to run (`npx tsc --noEmit`, `npm test`, or a phone test). Do not start the next step
   until I say the check passed and I understood.
-- Keep a short running list of terms and design decisions worth remembering. I will ask for interview questions at the end.
+- Keep a short running list of terms and design decisions worth remembering in `docs/interview-notes.md`.
+  I will ask for interview questions at the end.
 - Say plainly when you are unsure or could not verify something. Never invent file names, APIs or facts.
 
 ## What the app does
@@ -64,5 +65,10 @@ Also: Planner (meals), profile, BMI. Later: barcode scan with a shared product d
   2 independent user confirmations; barcode is the key; no photos or identities shared; RLS with no policies).
 - Golden set: build a set of 25 to 30 label photos with hand-written correct answers (target 100 over time), keep about
   20% as a hidden test set, and use it to measure label-reading accuracy. Photos stay out of git.
+- Future: decode as a paid API for other apps (customer API keys, per-plan quotas, usage metering,
+  versioned JSON responses, additive table on the server). Design rule from now on: keep label reading
+  and additive lookup in server code that does not depend on any app screen; the app is just one client.
+  The phone-side lookup at display time (so table updates reach old scans) must still work: the app
+  will use a copy of the server table, or ask the server again.
 - Later: vitamins/minerals for supplements, privacy text update (photos go to the AI provider), legal review (DPDP,
   teen mode).
