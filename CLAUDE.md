@@ -43,6 +43,8 @@ Also: Planner (meals), profile, BMI. Later: barcode scan with a shared product d
 - Uses Claude Haiku 5.5. Anonymous sign-in, daily decode limit.
 - `verify_jwt` must stay `true` in `supabase/config.toml`.
 - Deploy: `npx supabase functions deploy decode-label --use-api`
+- Before any `db push`: show which Supabase project is linked and wait for my OK. The real project and the
+  test project must never be mixed up.
 - Tests: `deno test --allow-all --config supabase/functions/decode-label/deno.json supabase/functions/decode-label`
 - Type check: `deno check --config supabase/functions/decode-label/deno.json supabase/functions/decode-label/index.ts`
 - Do NOT use backticks inside the SYSTEM_PROMPT template literal.
