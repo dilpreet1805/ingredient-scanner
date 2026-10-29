@@ -44,3 +44,13 @@
 - **Fail closed:** when input is invalid or unclear, answer "not allowed"; the safe default for anything shared.
 - **Test helper for valid data:** `key()` adds the check digit, so each test fails only for the rule it tests.
 - **Source caveat:** the prefix rules were checked against the GS1 prefix page and the GSCN 23-006 extract (sections 2.1.11 and 2.1.11.1), not the full General Specifications; re-check before sharing goes live. A secondary source said "40-49 is internal", which is wrong (400-440 is GS1 Germany), so primary sources matter.
+
+### Shared products design (6.8 discussion)
+- **Fingerprint:** a hash of the normalized ingredient text; two readings "agree" when their fingerprints are exactly equal.
+- **Formatting-only normalization:** change only how text looks (case, spaces, dash/quote/bracket shapes), never what it says (words, order, numbers, additive codes), so honest readings match but different recipes stay different.
+- **Fuzzy matching isn't transitive:** A can be close to B and B close to C while A is not close to C, so it becomes unclear which version a reading belongs to; and one changed character (471 vs 472) can be a real recipe change.
+- **Sybil attack:** one person creating many fake accounts to look like many independent people; anonymous sign-in can't stop it, phone login makes it expensive.
+- **One-time-use readings:** a stored label reading is deleted when it's submitted, so one photo can't confirm several barcodes or count twice.
+- **Consent before collection:** the user turns on "Share label readings" before the photo is sent, because the reading is saved during the decode; we never store data first and ask later.
+- **Retention matched to purpose:** keep data only as long as it's needed; confirmations are deleted after 180 days because the serving rule only counts the last 180 days.
+- **Partial staging (`git apply --cached`):** stages only part of a file's changes by applying a patch to the index without touching the working file; useful when one file's edits belong in two commits and `git add -p` isn't available.
