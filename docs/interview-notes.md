@@ -19,3 +19,6 @@
 - **Keep CLAUDE.md current:** a stale note misleads the next session, so update it in the same step as the code.
 - **Stage files by name; `git commit -F`:** `git add <file>` avoids committing things by accident; `-F` reads the commit message from a file, which avoids PowerShell quoting problems with multi-line messages.
 - **`git status -sb`:** short status plus a branch line showing how many commits you are ahead of or behind the remote.
+
+### Git on Windows
+- **Line endings (LF vs CRLF, `core.autocrlf`):** Unix ends lines with LF, Windows with CRLF; with `core.autocrlf=true` Git stores LF in the repo and gives you CRLF in your working folder (a `.gitattributes` file can fix this per repo for everyone).
